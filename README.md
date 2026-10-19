@@ -12,7 +12,8 @@ Kotlin / Views + Material 3, minSdk 26, target/compile SDK 37. Package `com.josh
 Output: `release/v<ver>/` and `release/latest/` (`notes-app.apk` + `update.json`). Upload both files from `release/latest/` to the host.
 
 ## Update hosting
-Edit `update.properties` (UPDATE_MANIFEST_URL / UPDATE_BASE_URL). Currently a REPLACE-ME placeholder.
+Hosted on GitHub Releases: https://github.com/jmcke47/josh-notes/releases (manifest at releases/latest/download/update.json).
+Publish a new version in one command (needs `gh auth login` or GH_TOKEN): `./publish.sh patch "What changed"`.
 Installed apps can also be pointed at a new URL in-app: menu → "Update source URL".
 `apkUrl` in update.json may be absolute or relative to the manifest URL. Must be HTTPS (release builds block cleartext).
 

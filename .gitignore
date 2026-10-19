@@ -4,3 +4,8 @@ app/build/
 local.properties
 keystore/
 release/
+*.apk
+*.jks
+*.keystore
+keystore.properties
+version.properties.bak
