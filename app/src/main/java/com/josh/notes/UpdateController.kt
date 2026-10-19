@@ -74,6 +74,12 @@ class UpdateController(private val activity: AppCompatActivity) {
             status.text = title; detail.text = sub; detail.visibility = if (sub.isEmpty()) View.GONE else View.VISIBLE
         }
 
+        fun fail(title: String, t: Throwable) {
+            done(R.drawable.ic_error, title, friendly(t))
+            notes.text = "Details: " + details(t); notes.visibility = View.VISIBLE
+            notes.setTextIsSelectable(true)
+        }
+
         fun done(iconRes: Int, title: String, sub: String) {
             spinner.visibility = View.GONE; progress.visibility = View.GONE
             icon.setImageResource(iconRes); icon.visibility = View.VISIBLE
@@ -98,7 +104,7 @@ class UpdateController(private val activity: AppCompatActivity) {
             val result = runCatching { fetchManifest(url) }
             main.post {
                 if (activity.isFinishing || cancelled) { ui.dismiss(); return@post }
-                result.onFailure { ui.done(R.drawable.ic_error, "Couldn't check for updates", friendly(it)) }
+                result.onFailure { ui.fail("Couldn't check for updates", it) }
                 result.onSuccess { m ->
                     if (m.versionCode <= installedVersionCode()) {
                         ui.done(R.drawable.ic_check_circle, "You're up to date", "Josh Notes v${BuildConfig.VERSION_NAME}")
@@ -146,38 +152,63 @@ class UpdateController(private val activity: AppCompatActivity) {
 
     // ---------------------------------------------------------------- internals
 
-    private fun friendly(t: Throwable): String = when (t) {
-        is java.net.UnknownHostException, is java.net.ConnectException -> "No internet connection. Try again later."
-        is java.net.SocketTimeoutException -> "The server took too long to respond."
-        else -> t.message ?: t.javaClass.simpleName
+    /** Short human message; only claims "offline" when Android says there's no usable network. */
+    private fun friendly(t: Throwable): String {
+        val online = hasNetwork()
+        return when {
+            t is UpdateHttp.HttpStatusException && t.code == 404 -> "No published update was found on the server."
+            t is UpdateHttp.HttpStatusException -> "The update server returned an error (HTTP ${t.code})."
+            !online && (t is java.net.UnknownHostException || t is java.net.ConnectException ||
+                    t is java.net.SocketTimeoutException) -> "You appear to be offline. Check your connection and try again."
+            t is java.net.UnknownHostException -> "Couldn't reach the update server (DNS lookup failed). If other apps work, check that Josh Notes is allowed to use mobile data / background data in Android settings, or Private DNS."
+            t is java.net.SocketTimeoutException -> "The update server took too long to respond."
+            t is javax.net.ssl.SSLException -> "Secure connection to the update server failed. Check the phone's date & time."
+            t is java.net.ConnectException -> "Couldn't connect to the update server."
+            else -> "Something went wrong while checking for updates."
+        }
     }
 
+    /** Technical one-liner for the "Details" line. */
+    private fun details(t: Throwable): String {
+        val root = generateSequence(t) { it.cause }.last()
+        val chain = if (root !== t) " ← ${root.javaClass.simpleName}: ${root.message}" else ""
+        return "${t.javaClass.simpleName}: ${t.message}$chain · network: ${networkSummary()}"
+    }
+
+    private fun cm() = activity.getSystemService(android.net.ConnectivityManager::class.java)
+
+    private fun hasNetwork(): Boolean = runCatching {
+        val caps = cm().getNetworkCapabilities(cm().activeNetwork) ?: return false
+        caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }.getOrDefault(true) // if we can't tell, don't claim offline
+
+    private fun networkSummary(): String = runCatching {
+        val c = cm()
+        val caps = c.getNetworkCapabilities(c.activeNetwork) ?: return "none"
+        val t = buildList {
+            if (caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)) add("wifi")
+            if (caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) add("cellular")
+            if (caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN)) add("vpn")
+            if (caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) add("ethernet")
+        }.joinToString("+").ifEmpty { "other" }
+        val validated = caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        val bg = when (c.restrictBackgroundStatus) {
+            android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED -> ", data saver on"
+            else -> ""
+        }
+        "$t${if (validated) "" else " (not validated)"}$bg"
+    }.getOrElse { "unknown" }
+
     private fun fetchManifest(url: String): Manifest {
-        val conn = open(url)
-        try {
-            val o = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
-            val absApk = URL(URL(url), o.getString("apkUrl")).toString()
-            return Manifest(o.getLong("versionCode"), o.optString("versionName", ""), absApk, o.optString("notes", ""))
-        } finally { conn.disconnect() }
+        UpdateHttp.userAgent = "JoshNotes/${BuildConfig.VERSION_NAME} (Android ${Build.VERSION.RELEASE})"
+        val o = JSONObject(UpdateHttp.readText(url))
+        val absApk = URL(URL(url), o.getString("apkUrl")).toString()
+        return Manifest(o.getLong("versionCode"), o.optString("versionName", ""), absApk, o.optString("notes", ""))
     }
 
     private fun open(url: String): HttpURLConnection {
-        var current = URL(url)
-        repeat(6) {
-            val c = current.openConnection() as HttpURLConnection
-            c.connectTimeout = 15000; c.readTimeout = 30000
-            c.instanceFollowRedirects = true
-            c.setRequestProperty("Cache-Control", "no-cache")
-            c.setRequestProperty("User-Agent", "JoshNotes/${BuildConfig.VERSION_NAME}")
-            val code = c.responseCode
-            if (code in 300..399) {
-                val loc = c.getHeaderField("Location") ?: throw IllegalStateException("Redirect without Location")
-                c.disconnect(); current = URL(current, loc); return@repeat
-            }
-            if (code !in 200..299) { c.disconnect(); throw IllegalStateException("Server answered HTTP $code") }
-            return c
-        }
-        throw IllegalStateException("Too many redirects")
+        UpdateHttp.userAgent = "JoshNotes/${BuildConfig.VERSION_NAME} (Android ${Build.VERSION.RELEASE})"
+        return UpdateHttp.open(url)
     }
 
     private fun download(m: Manifest, ui: StatusDialog) {
@@ -222,7 +253,7 @@ class UpdateController(private val activity: AppCompatActivity) {
                 if (activity.isFinishing) return@post
                 result.onFailure {
                     out.delete()
-                    if (cancelled) ui.dismiss() else ui.done(R.drawable.ic_error, "Update failed", friendly(it))
+                    if (cancelled) ui.dismiss() else ui.fail("Update failed", it)
                 }
                 result.onSuccess {
                     ui.progress.setProgressCompat(100, true)
@@ -271,7 +302,7 @@ class UpdateController(private val activity: AppCompatActivity) {
                     setDataAndType(uri, "application/vnd.android.package-archive")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 })
-            }.onFailure { StatusDialog().done(R.drawable.ic_error, "Couldn't open installer", friendly(it)) }
+            }.onFailure { StatusDialog().fail("Couldn't open installer", it) }
         }
     }
 
