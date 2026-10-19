@@ -26,7 +26,7 @@ object UpdateHttp {
     }
 
     private fun openOnce(url: String): HttpURLConnection {
-        var current = URL(url)
+        var current = URL(sanitizeUrl(url) ?: throw java.net.MalformedURLException("Invalid update URL: \"$url\""))
         for (hop in 0..8) {
             val c = current.openConnection() as HttpURLConnection
             c.connectTimeout = 20000; c.readTimeout = 30000
@@ -53,6 +53,31 @@ object UpdateHttp {
     fun readText(url: String): String {
         val c = open(url)
         try { return c.inputStream.bufferedReader().use { it.readText() } } finally { c.disconnect() }
+    }
+
+    /**
+     * Cleans a user-entered / stored URL: removes all whitespace and invisible characters
+     * (phone keyboards/autocorrect insert spaces like "github . com"), strips surrounding quotes/brackets
+     * and trailing punctuation, then validates it is an absolute https URL with a real host.
+     * Returns the normalized URL, or null if it isn't usable.
+     */
+    fun sanitizeUrl(raw: String?): String? {
+        if (raw == null) return null
+        var s = raw.replace(Regex("[\\s\u00A0\u1680\u2000-\u200F\u2028-\u202F\u205F\u2060\u3000\uFEFF]"), "")
+        s = s.trim('"', '\'', '<', '>', '(', ')', '[', ']', '`')
+        s = s.trimEnd('.', ',', ';', ':', '!', '?')
+        if (s.isEmpty()) return null
+        if (!s.contains("://")) s = "https://$s"
+        return try {
+            val u = java.net.URI(s)
+            val host = u.host
+            if (!u.scheme.equals("https", ignoreCase = true)) return null
+            if (host.isNullOrEmpty() || !host.contains('.') || host.startsWith('.') || host.endsWith('.')) return null
+            if (!host.all { it.isLetterOrDigit() || it == '.' || it == '-' }) return null
+            if (u.rawUserInfo != null) return null
+            "https://" + host.lowercase() + (if (u.port > 0) ":${u.port}" else "") +
+                (u.rawPath?.ifEmpty { "/" } ?: "/") + (u.rawQuery?.let { "?$it" } ?: "")
+        } catch (_: Exception) { null }
     }
 
     class HttpStatusException(val code: Int, val host: String) : IOException("HTTP $code from $host")

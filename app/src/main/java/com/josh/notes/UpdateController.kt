@@ -41,8 +41,21 @@ class UpdateController(private val activity: AppCompatActivity) {
     private var pendingApk: File? = null
     @Volatile private var cancelled = false
 
-    fun manifestUrl(): String =
-        prefs.getString("manifest_url", null)?.takeIf { it.isNotBlank() } ?: BuildConfig.UPDATE_MANIFEST_URL
+    /**
+     * Effective manifest URL. A stored override (from 1.0.0's "Update source URL" or Settings > Advanced)
+     * is sanitized; if it's unusable or just the default, it's discarded and the built-in default is used.
+     */
+    fun manifestUrl(): String {
+        val default = UpdateHttp.sanitizeUrl(BuildConfig.UPDATE_MANIFEST_URL) ?: BuildConfig.UPDATE_MANIFEST_URL
+        val raw = prefs.getString("manifest_url", null) ?: return default
+        val clean = UpdateHttp.sanitizeUrl(raw)
+        if (clean == null || clean == default || clean.contains("REPLACE-ME")) {
+            prefs.edit { remove("manifest_url") }
+            return default
+        }
+        if (clean != raw) prefs.edit { putString("manifest_url", clean) }
+        return clean
+    }
 
     private fun isPlaceholder(url: String) = url.isBlank() || url.contains("REPLACE-ME")
 
@@ -146,7 +159,16 @@ class UpdateController(private val activity: AppCompatActivity) {
             .setView(box)
             .setNeutralButton("Reset to default") { _, _ -> prefs.edit { remove("manifest_url") } }
             .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ -> prefs.edit { putString("manifest_url", input.text.toString().trim()) } }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val typed = input.text.toString()
+                val clean = UpdateHttp.sanitizeUrl(typed)
+                when {
+                    typed.isBlank() -> prefs.edit { remove("manifest_url") }
+                    clean == null -> android.widget.Toast.makeText(activity,
+                        "That isn't a valid https:// address — kept the previous one.", android.widget.Toast.LENGTH_LONG).show()
+                    else -> prefs.edit { putString("manifest_url", clean) }
+                }
+            }
             .show()
     }
 
@@ -202,7 +224,8 @@ class UpdateController(private val activity: AppCompatActivity) {
     private fun fetchManifest(url: String): Manifest {
         UpdateHttp.userAgent = "JoshNotes/${BuildConfig.VERSION_NAME} (Android ${Build.VERSION.RELEASE})"
         val o = JSONObject(UpdateHttp.readText(url))
-        val absApk = URL(URL(url), o.getString("apkUrl")).toString()
+        val absApk = UpdateHttp.sanitizeUrl(URL(URL(url), o.getString("apkUrl").trim()).toString())
+            ?: throw java.io.IOException("Manifest has an invalid apkUrl")
         return Manifest(o.getLong("versionCode"), o.optString("versionName", ""), absApk, o.optString("notes", ""))
     }
 

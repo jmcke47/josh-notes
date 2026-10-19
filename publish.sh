@@ -51,5 +51,11 @@ for f in update.json notes-app.apk; do
   code=$(curl -s -o /dev/null -w '%{http_code}' -L "$BASE/$f")
   echo "    $BASE/$f -> HTTP $code"
 done
-curl -sL "$BASE/update.json"; echo
+CODE=$(grep '^VERSION_CODE=' version.properties | cut -d= -f2)
+for i in 1 2 3 4 5 6; do   # GitHub's CDN can serve the previous file for a few seconds
+  J=$(curl -sL "$BASE/update.json?nocache=$(date +%s)")
+  echo "$J" | grep -q "\"versionCode\": *$CODE\b" && break
+  sleep 5
+done
+echo "$J"
 echo "==> Published $TAG: https://github.com/$REPO/releases/tag/$TAG"
