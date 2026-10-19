@@ -23,6 +23,8 @@ android {
         targetSdk = 37
         versionCode = versionProps.getProperty("VERSION_CODE", "1").toInt()
         versionName = versionProps.getProperty("VERSION_NAME", "1.0.0")
+        // Vosk native libs: real phones only (keeps APK small).
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         buildConfigField(
             "String", "UPDATE_MANIFEST_URL",
             "\"" + (project.findProperty("updateManifestUrl") as String?
@@ -53,6 +55,9 @@ android {
     }
 
     buildFeatures { buildConfig = true }
+    // Compress native libs (Vosk) inside the APK: much smaller download.
+    packaging { jniLibs { useLegacyPackaging = true } }
+    testOptions { unitTests.isReturnDefaultValues = true }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -66,4 +71,8 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.13.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("com.google.android.material:material:1.14.0")
+    implementation("com.alphacephei:vosk-android:0.3.75")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20250517")
+    implementation("net.java.dev.jna:jna:5.18.1@aar")
 }

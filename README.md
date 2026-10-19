@@ -4,6 +4,8 @@ Kotlin / Views + Material 3, minSdk 26, target/compile SDK 37. Package `com.josh
 
 * Notes stored as JSON in the app's private storage (`files/notes.json`); auto-save on leaving the editor.
 * Home-screen widget "Josh Notes" (resizable, scrollable list via RemoteViewsService). Tap a note to open it, "+" for a new note. Refreshes on every save/delete.
+* v1.1: search, pin, colour labels, checklists, swipe-to-delete + Undo, share/receive text, JSON backup export/import (SAF), sort, archive, offline dictation (Android on-device recognizer or Vosk; ~40 MB model downloaded on first use), volume-key dictation trigger, widget mic button, theme (Light/Dark/System + Material You), Settings screen.
+* Notes file format v2 (`{"format":2,"notes":[...]}`); v1 arrays are read transparently and backed up to `files/notes.v1-backup.json` on first launch.
 * Self-updater: toolbar ⟳ "Check for updates" → fetches `update.json`, compares versionCode, downloads APK, opens the system installer.
 
 ## Build / release

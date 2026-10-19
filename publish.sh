@@ -31,6 +31,8 @@ fi
 git remote get-url origin >/dev/null 2>&1 || git remote add origin "https://github.com/$REPO.git"
 gh auth setup-git >/dev/null 2>&1 || true
 
+git config user.name >/dev/null 2>&1 || git config user.name "jmcke47"
+git config user.email >/dev/null 2>&1 || git config user.email "44462275+jmcke47@users.noreply.github.com"
 git add -A
 git diff --cached --quiet || git commit -qm "Release $TAG"
 git branch -M main

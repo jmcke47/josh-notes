@@ -6,13 +6,19 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.view.LayoutInflater
+import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
-import android.widget.Toast
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.core.content.edit
+import androidx.core.content.pm.PackageInfoCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import org.json.JSONObject
 import java.io.File
@@ -21,14 +27,9 @@ import java.net.URL
 import java.util.concurrent.Executors
 
 /**
- * Self-updater.
- *
- * Fetches a manifest JSON like:
- *   { "versionCode": 2, "versionName": "1.0.1",
- *     "apkUrl": "https://.../notes-app.apk", "notes": "What's new" }
- * from [manifestUrl] (BuildConfig.UPDATE_MANIFEST_URL, overridable in-app),
- * compares versionCode with the installed one, downloads the APK into
- * cacheDir/updates/ and hands it to the system package installer via FileProvider.
+ * Self-updater. Manifest JSON:
+ *   { "versionCode": 2, "versionName": "1.1.0", "apkUrl": "https://.../notes-app.apk", "notes": "..." }
+ * Flow (single status dialog): Checking… -> Up to date | Update found vX — updating… (progress) -> system installer.
  */
 class UpdateController(private val activity: AppCompatActivity) {
 
@@ -38,6 +39,7 @@ class UpdateController(private val activity: AppCompatActivity) {
     private val main = Handler(Looper.getMainLooper())
     private val prefs = activity.getSharedPreferences("updater", 0)
     private var pendingApk: File? = null
+    @Volatile private var cancelled = false
 
     fun manifestUrl(): String =
         prefs.getString("manifest_url", null)?.takeIf { it.isNotBlank() } ?: BuildConfig.UPDATE_MANIFEST_URL
@@ -49,73 +51,112 @@ class UpdateController(private val activity: AppCompatActivity) {
         val info = if (Build.VERSION.SDK_INT >= 33)
             pm.getPackageInfo(activity.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
         else @Suppress("DEPRECATION") pm.getPackageInfo(activity.packageName, 0)
-        return androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(info)
+        return PackageInfoCompat.getLongVersionCode(info)
     }
 
-    fun editUpdateUrl() {
-        val input = EditText(activity).apply {
-            setText(manifestUrl()); setSingleLine(); selectAll()
-        }
-        val box = FrameLayout(activity).apply {
-            val p = (20 * resources.displayMetrics.density).toInt()
-            setPadding(p, p / 2, p, 0); addView(input)
-        }
-        MaterialAlertDialogBuilder(activity)
-            .setTitle(R.string.update_url)
-            .setMessage("URL of update.json. Leave empty to use the built-in default.")
-            .setView(box)
-            .setNeutralButton("Reset") { _, _ -> prefs.edit().remove("manifest_url").apply() }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                prefs.edit().putString("manifest_url", input.text.toString().trim()).apply()
-            }
+    // ---------------------------------------------------------------- status dialog
+
+    private inner class StatusDialog {
+        val view: View = LayoutInflater.from(activity).inflate(R.layout.dialog_update, null)
+        val spinner: CircularProgressIndicator = view.findViewById(R.id.spinner)
+        val icon: ImageView = view.findViewById(R.id.status_icon)
+        val status: TextView = view.findViewById(R.id.status)
+        val detail: TextView = view.findViewById(R.id.detail)
+        val progress: LinearProgressIndicator = view.findViewById(R.id.progress)
+        val notes: TextView = view.findViewById(R.id.notes)
+        val dialog: AlertDialog = MaterialAlertDialogBuilder(activity)
+            .setView(view).setCancelable(false)
+            .setNegativeButton(android.R.string.cancel) { _, _ -> cancelled = true }
             .show()
+
+        fun busy(title: String, sub: String = "") {
+            spinner.visibility = View.VISIBLE; icon.visibility = View.GONE
+            status.text = title; detail.text = sub; detail.visibility = if (sub.isEmpty()) View.GONE else View.VISIBLE
+        }
+
+        fun done(iconRes: Int, title: String, sub: String) {
+            spinner.visibility = View.GONE; progress.visibility = View.GONE
+            icon.setImageResource(iconRes); icon.visibility = View.VISIBLE
+            status.text = title; detail.text = sub; detail.visibility = View.VISIBLE
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).text = activity.getString(android.R.string.ok)
+            dialog.setCancelable(true)
+        }
+
+        fun dismiss() { if (dialog.isShowing) dialog.dismiss() }
     }
 
+    // ---------------------------------------------------------------- public API
+
+    /** Manual "Check for updates": checks, and if newer, downloads + installs straight away. */
     fun checkForUpdates() {
         val url = manifestUrl()
-        if (isPlaceholder(url)) {
-            MaterialAlertDialogBuilder(activity)
-                .setTitle("Updates not configured")
-                .setMessage("No update server has been set up yet.\n\nSet one via menu → ${activity.getString(R.string.update_url)}.")
-                .setPositiveButton(android.R.string.ok, null)
-                .setNeutralButton(R.string.update_url) { _, _ -> editUpdateUrl() }
-                .show()
-            return
-        }
-        val dialog = progressDialog("Checking for updates…", indeterminate = true)
+        cancelled = false
+        val ui = StatusDialog()
+        if (isPlaceholder(url)) { ui.done(R.drawable.ic_error, "Updates not set up", "No update server is configured."); return }
+        ui.busy("Checking for updates…")
         io.execute {
             val result = runCatching { fetchManifest(url) }
             main.post {
-                if (activity.isFinishing) return@post
-                dialog.dismiss()
-                result.onFailure { showError("Couldn't check for updates", it) }
+                if (activity.isFinishing || cancelled) { ui.dismiss(); return@post }
+                result.onFailure { ui.done(R.drawable.ic_error, "Couldn't check for updates", friendly(it)) }
                 result.onSuccess { m ->
-                    val current = installedVersionCode()
-                    if (m.versionCode <= current) {
-                        Toast.makeText(activity, "You're up to date (v${BuildConfig.VERSION_NAME})", Toast.LENGTH_LONG).show()
-                    } else {
-                        MaterialAlertDialogBuilder(activity)
-                            .setTitle("Update available: v${m.versionName}")
-                            .setMessage("Installed: v${BuildConfig.VERSION_NAME} (build $current)\nNew: v${m.versionName} (build ${m.versionCode})" +
-                                    if (m.notes.isNotBlank()) "\n\n${m.notes}" else "")
-                            .setNegativeButton("Later", null)
-                            .setPositiveButton("Update") { _, _ -> download(m) }
-                            .show()
-                    }
+                    if (m.versionCode <= installedVersionCode()) {
+                        ui.done(R.drawable.ic_check_circle, "You're up to date", "Josh Notes v${BuildConfig.VERSION_NAME}")
+                    } else download(m, ui)
                 }
             }
         }
     }
 
+    /** Quiet check on launch (at most every 6 h). Calls [onAvailable] on the main thread if newer. */
+    fun quietCheck(onAvailable: (Manifest) -> Unit) {
+        val url = manifestUrl()
+        if (isPlaceholder(url)) return
+        val now = System.currentTimeMillis()
+        if (now - prefs.getLong("last_quiet_check", 0L) < 6 * 3600_000L) {
+            // Still surface a known pending update without hitting the network.
+            val known = prefs.getLong("known_latest", 0L)
+            if (known <= installedVersionCode()) return
+        }
+        io.execute {
+            val m = runCatching { fetchManifest(url) }.getOrNull() ?: return@execute
+            prefs.edit { putLong("last_quiet_check", now); putLong("known_latest", m.versionCode) }
+            if (m.versionCode > installedVersionCode()) main.post { if (!activity.isFinishing) onAvailable(m) }
+        }
+    }
+
+    /** Start downloading a known manifest (from the launch banner). */
+    fun startUpdate(m: Manifest) { cancelled = false; download(m, StatusDialog()) }
+
+    /** Advanced: change the manifest URL (Settings > Advanced). */
+    fun editUpdateUrl() {
+        val input = EditText(activity).apply { setText(manifestUrl()); setSingleLine(); selectAll() }
+        val box = FrameLayout(activity).apply {
+            val p = (20 * resources.displayMetrics.density).toInt(); setPadding(p, p / 2, p, 0); addView(input)
+        }
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.update_url)
+            .setMessage("Advanced: URL of update.json.")
+            .setView(box)
+            .setNeutralButton("Reset to default") { _, _ -> prefs.edit { remove("manifest_url") } }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ -> prefs.edit { putString("manifest_url", input.text.toString().trim()) } }
+            .show()
+    }
+
+    // ---------------------------------------------------------------- internals
+
+    private fun friendly(t: Throwable): String = when (t) {
+        is java.net.UnknownHostException, is java.net.ConnectException -> "No internet connection. Try again later."
+        is java.net.SocketTimeoutException -> "The server took too long to respond."
+        else -> t.message ?: t.javaClass.simpleName
+    }
+
     private fun fetchManifest(url: String): Manifest {
         val conn = open(url)
         try {
-            val text = conn.inputStream.bufferedReader().use { it.readText() }
-            val o = JSONObject(text)
-            val apk = o.getString("apkUrl")
-            // apkUrl may be relative to the manifest URL.
-            val absApk = URL(URL(url), apk).toString()
+            val o = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+            val absApk = URL(URL(url), o.getString("apkUrl")).toString()
             return Manifest(o.getLong("versionCode"), o.optString("versionName", ""), absApk, o.optString("notes", ""))
         } finally { conn.disconnect() }
     }
@@ -129,22 +170,23 @@ class UpdateController(private val activity: AppCompatActivity) {
             c.setRequestProperty("Cache-Control", "no-cache")
             c.setRequestProperty("User-Agent", "JoshNotes/${BuildConfig.VERSION_NAME}")
             val code = c.responseCode
-            if (code in 300..399) { // cross-protocol/host redirects
+            if (code in 300..399) {
                 val loc = c.getHeaderField("Location") ?: throw IllegalStateException("Redirect without Location")
                 c.disconnect(); current = URL(current, loc); return@repeat
             }
-            if (code !in 200..299) { c.disconnect(); throw IllegalStateException("HTTP $code from ${current.host}") }
+            if (code !in 200..299) { c.disconnect(); throw IllegalStateException("Server answered HTTP $code") }
             return c
         }
         throw IllegalStateException("Too many redirects")
     }
 
-    private fun download(m: Manifest) {
+    private fun download(m: Manifest, ui: StatusDialog) {
+        ui.busy("Update found: v${m.versionName}", "Updating…")
+        if (m.notes.isNotBlank()) { ui.notes.text = m.notes; ui.notes.visibility = View.VISIBLE }
+        ui.progress.visibility = View.VISIBLE; ui.progress.isIndeterminate = true
         val dir = File(activity.cacheDir, "updates").apply { mkdirs() }
         dir.listFiles()?.forEach { it.delete() }
         val out = File(dir, "notes-${m.versionCode}.apk")
-        val dialog = progressDialog("Downloading v${m.versionName}…", indeterminate = false)
-        val bar = dialog.findViewById<LinearProgressIndicator>(PROGRESS_ID)
         io.execute {
             val result = runCatching {
                 val conn = open(m.apkUrl)
@@ -154,50 +196,62 @@ class UpdateController(private val activity: AppCompatActivity) {
                         out.outputStream().use { output ->
                             val buf = ByteArray(64 * 1024); var done = 0L; var lastPct = -1
                             while (true) {
+                                if (cancelled) throw InterruptedException("Cancelled")
                                 val n = input.read(buf); if (n < 0) break
                                 output.write(buf, 0, n); done += n
                                 if (total > 0) {
                                     val pct = (done * 100 / total).toInt()
-                                    if (pct != lastPct) { lastPct = pct; main.post { bar?.setProgressCompat(pct, true) } }
+                                    if (pct != lastPct) {
+                                        lastPct = pct
+                                        val mb = "%.1f / %.1f MB".format(done / 1e6, total / 1e6)
+                                        main.post {
+                                            ui.progress.isIndeterminate = false
+                                            ui.progress.setProgressCompat(pct, true)
+                                            ui.detail.text = "Downloading… $pct%  ($mb)"
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 } finally { conn.disconnect() }
-                verifyApk(out, m)
+                verifyApk(out)
                 out
             }
             main.post {
                 if (activity.isFinishing) return@post
-                dialog.dismiss()
-                result.onFailure { out.delete(); showError("Download failed", it) }
-                result.onSuccess { install(it) }
+                result.onFailure {
+                    out.delete()
+                    if (cancelled) ui.dismiss() else ui.done(R.drawable.ic_error, "Update failed", friendly(it))
+                }
+                result.onSuccess {
+                    ui.progress.setProgressCompat(100, true)
+                    ui.detail.text = "Opening installer…"
+                    ui.dismiss()
+                    install(it)
+                }
             }
         }
     }
 
-    /** Sanity-check the download is our package and actually newer. Signature is enforced by Android itself. */
-    private fun verifyApk(file: File, m: Manifest) {
-        val pm = activity.packageManager
+    private fun verifyApk(file: File) {
         @Suppress("DEPRECATION")
-        val info = pm.getPackageArchiveInfo(file.absolutePath, 0)
+        val info = activity.packageManager.getPackageArchiveInfo(file.absolutePath, 0)
             ?: throw IllegalStateException("Downloaded file is not a valid APK")
-        if (info.packageName != activity.packageName)
-            throw IllegalStateException("APK is for a different app (${info.packageName})")
-        if (androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(info) <= installedVersionCode())
-            throw IllegalStateException("Downloaded APK (build ${androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(info)}) is not newer than installed")
+        if (info.packageName != activity.packageName) throw IllegalStateException("APK is for a different app")
+        if (PackageInfoCompat.getLongVersionCode(info) <= installedVersionCode())
+            throw IllegalStateException("Downloaded APK is not newer than the installed version")
     }
 
     private fun install(apk: File) {
         if (!activity.packageManager.canRequestPackageInstalls()) {
             pendingApk = apk
             MaterialAlertDialogBuilder(activity)
-                .setTitle("Allow updates")
-                .setMessage("To install updates, allow Josh Notes to install apps. You'll be sent to Settings — enable the toggle, then come back.")
+                .setTitle("One-time permission")
+                .setMessage("Allow Josh Notes to install its own updates. Turn on the switch on the next screen, then come back — the update will continue.")
                 .setNegativeButton(android.R.string.cancel) { _, _ -> pendingApk = null }
-                .setPositiveButton("Open Settings") { _, _ ->
-                    activity.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                        Uri.parse("package:${activity.packageName}")))
+                .setPositiveButton("Continue") { _, _ ->
+                    activity.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}")))
                 }
                 .show()
             return
@@ -211,12 +265,13 @@ class UpdateController(private val activity: AppCompatActivity) {
             putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
             putExtra(Intent.EXTRA_INSTALLER_PACKAGE_NAME, activity.packageName)
         }
-        try { activity.startActivity(intent) } catch (e: Exception) {
-            val view = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            runCatching { activity.startActivity(view) }.onFailure { showError("Couldn't open installer", it) }
+        try { activity.startActivity(intent) } catch (_: Exception) {
+            runCatching {
+                activity.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "application/vnd.android.package-archive")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                })
+            }.onFailure { StatusDialog().done(R.drawable.ic_error, "Couldn't open installer", friendly(it)) }
         }
     }
 
@@ -225,25 +280,4 @@ class UpdateController(private val activity: AppCompatActivity) {
         val apk = pendingApk ?: return
         if (activity.packageManager.canRequestPackageInstalls() && apk.exists()) install(apk)
     }
-
-    private fun progressDialog(title: String, indeterminate: Boolean): AlertDialog {
-        val bar = LinearProgressIndicator(activity).apply {
-            id = PROGRESS_ID; isIndeterminate = indeterminate; max = 100
-        }
-        val box = FrameLayout(activity).apply {
-            val p = (24 * resources.displayMetrics.density).toInt()
-            setPadding(p, p / 2, p, p / 2); addView(bar)
-        }
-        return MaterialAlertDialogBuilder(activity).setTitle(title).setView(box).setCancelable(false).show()
-    }
-
-    private fun showError(title: String, t: Throwable) {
-        MaterialAlertDialogBuilder(activity)
-            .setTitle(title)
-            .setMessage(t.message ?: t.javaClass.simpleName)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
-    }
-
-    companion object { private val PROGRESS_ID = android.view.View.generateViewId() }
 }

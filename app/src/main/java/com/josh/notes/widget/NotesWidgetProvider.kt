@@ -68,6 +68,13 @@ class NotesWidgetProvider : AppWidgetProvider() {
                     Intent(context, EditNoteActivity::class.java).setAction("com.josh.notes.NEW_NOTE")
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), immutable)
             )
+            // Mic -> new note with dictation started.
+            views.setOnClickPendingIntent(
+                R.id.widget_mic,
+                PendingIntent.getActivity(context, 5,
+                    Intent(context, EditNoteActivity::class.java).setAction(EditNoteActivity.ACTION_DICTATE)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), immutable)
+            )
             // Empty state -> new note.
             views.setOnClickPendingIntent(
                 R.id.widget_empty,
