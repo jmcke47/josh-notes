@@ -1,0 +1,8 @@
+<resources>
+    <color name="seed">#3F6AD8</color>
+    <color name="widget_bg">#F2F4FA</color>
+    <color name="widget_card">#FFFFFF</color>
+    <color name="widget_text">#1A1C22</color>
+    <color name="widget_subtext">#5A5F6E</color>
+    <color name="widget_accent">#3F6AD8</color>
+</resources>

@@ -1,0 +1,69 @@
+import java.util.Properties
+
+plugins {
+    id("com.android.application")
+}
+
+fun loadProps(name: String): Properties = Properties().apply {
+    val f = rootProject.file(name)
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+val versionProps = loadProps("version.properties")
+val updateProps = loadProps("update.properties")
+val keystoreProps = loadProps("keystore/keystore.properties")
+
+android {
+    namespace = "com.josh.notes"
+    compileSdk = 37
+
+    defaultConfig {
+        applicationId = "com.josh.notes"
+        minSdk = 26
+        targetSdk = 37
+        versionCode = versionProps.getProperty("VERSION_CODE", "1").toInt()
+        versionName = versionProps.getProperty("VERSION_NAME", "1.0.0")
+        buildConfigField(
+            "String", "UPDATE_MANIFEST_URL",
+            "\"" + (project.findProperty("updateManifestUrl") as String?
+                ?: updateProps.getProperty("UPDATE_MANIFEST_URL", "")) + "\""
+        )
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("keystore/" + keystoreProps.getProperty("storeFile", "release.jks"))
+            storePassword = keystoreProps.getProperty("storePassword")
+            keyAlias = keystoreProps.getProperty("keyAlias")
+            keyPassword = keystoreProps.getProperty("keyPassword")
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            // Same key for debug too, so any build can update any other.
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    buildFeatures { buildConfig = true }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation("androidx.core:core-ktx:1.19.1")
+    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("androidx.activity:activity-ktx:1.13.0")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
+    implementation("com.google.android.material:material:1.14.0")
+}
