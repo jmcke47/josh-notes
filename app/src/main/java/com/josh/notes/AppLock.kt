@@ -72,6 +72,8 @@ open class LockableActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val os = AppSettings.oldSchool(this)
+        appliedTheme = AppSettings.signature(this)
+        createCount++
         if (os) setTheme(R.style.Theme_JoshNotes_OldSchool)
         super.onCreate(savedInstanceState)
         // enableEdgeToEdge() may have created the window before the theme switch.
@@ -83,8 +85,24 @@ open class LockableActivity : AppCompatActivity() {
         if (AppLock.needsUnlock(this)) showCover()
     }
 
+    private var appliedTheme: String? = null
+
+    companion object {
+        /** Test hook: number of LockableActivity creations (used to assert a theme switch recreates exactly once). */
+        @androidx.annotation.VisibleForTesting @JvmStatic var createCount = 0
+    }
+
+    /** True (and a single recreate is scheduled) if the theme changed while this activity was in the background. */
+    fun recreateIfThemeChanged(): Boolean {
+        if (appliedTheme == null || appliedTheme == AppSettings.signature(this) || isChangingConfigurations || isFinishing || isDestroyed) return false
+        appliedTheme = AppSettings.signature(this) // guard: never loop
+        AppSettings.recreateFaded(this)
+        return true
+    }
+
     override fun onResume() {
         super.onResume()
+        if (recreateIfThemeChanged()) return
         // Auto-prompt once per lock; after a cancel the user taps "Unlock" (avoids a re-prompt loop).
         if (AppLock.needsUnlock(this)) { showCover(); if (!autoPrompted) { autoPrompted = true; requestUnlock() } }
         else hideCover()

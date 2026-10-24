@@ -11,4 +11,9 @@
         <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
         <item name="android:textColor">?attr/colorPrimary</item>
     </style>
+    <!-- Cross-fade used for the single recreate when the theme changes. -->
+    <style name="ThemeSwitchFade" parent="">
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+    </style>
 </resources>

@@ -33,7 +33,7 @@ import java.util.concurrent.Executors
 
 class MainActivity : LockableActivity() {
 
-    companion object { @JvmStatic var themeChanged = false }
+
 
     private val adapter by lazy { NotesAdapter(oldSchool) { if (mode == Mode.TRASH) trashActions(it) else openNote(it.id) } }
     private lateinit var empty: TextView
@@ -227,7 +227,7 @@ class MainActivity : LockableActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (themeChanged) { themeChanged = false; recreate(); return }
+        if (isChangingConfigurations || isFinishing) return
         refresh()
         updateController.onResume()
         Levels.consumePendingLevel(this).takeIf { it > 0 }?.let { lvl -> root.post { Levels.levelUp(this, lvl) } }

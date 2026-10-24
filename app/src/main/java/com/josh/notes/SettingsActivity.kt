@@ -19,6 +19,7 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import java.io.File
 
 class SettingsActivity : LockableActivity() {
+    private var switchingTheme = false
     private val io = java.util.concurrent.Executors.newSingleThreadExecutor()
     private val pickFolder = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -239,28 +240,30 @@ class SettingsActivity : LockableActivity() {
         ThemeMode.entries.forEach { t ->
             themeGroup.addView(RadioButton(this).apply {
                 id = View.generateViewId(); text = t.label; isChecked = t == theme
+                isSaveEnabled = false // state always comes from prefs; restoring must not re-trigger
                 setOnClickListener {
-                    if (AppSettings.theme(this@SettingsActivity) != t) {
-                        AppSettings.setTheme(this@SettingsActivity, t)
-                        MainActivity.themeChanged = true
-                        com.josh.notes.widget.NotesWidgetProvider.refreshAll(this@SettingsActivity)
-                        recreate()
-                    }
+                    if (switchingTheme || AppSettings.theme(this@SettingsActivity) == t) return@setOnClickListener
+                    switchingTheme = true
+                    com.josh.notes.widget.NotesWidgetProvider.refreshAll(this@SettingsActivity.applicationContext)
+                    AppSettings.switchTheme(this@SettingsActivity, t)
                 }
             })
         }
         findViewById<MaterialSwitch>(R.id.dynamic_color).apply {
             if (!DynamicColors.isDynamicColorAvailable()) { isEnabled = false; text = "$text — not supported on this phone" }
             if (AppSettings.oldSchool(this@SettingsActivity)) { isEnabled = false; text = "Material You colours (not used by Old School)" }
+            isSaveEnabled = false
             isChecked = AppSettings.dynamicColor(this@SettingsActivity)
             setOnCheckedChangeListener { _, on ->
+                if (switchingTheme || on == AppSettings.dynamicColor(this@SettingsActivity)) return@setOnCheckedChangeListener
+                switchingTheme = true
                 AppSettings.setDynamicColor(this@SettingsActivity, on)
-                MainActivity.themeChanged = true
-                recreate()
+                AppSettings.recreateFaded(this@SettingsActivity)
             }
         }
 
         findViewById<MaterialSwitch>(R.id.level_ups).apply {
+            isSaveEnabled = false
             isChecked = AppSettings.levelUps(this@SettingsActivity)
             setOnCheckedChangeListener { _, on -> AppSettings.setLevelUps(this@SettingsActivity, on) }
         }
