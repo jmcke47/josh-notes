@@ -7,11 +7,25 @@ import com.josh.notes.R
 import com.josh.notes.ThemeMode
 
 /** Widget look that follows the app's theme setting (the launcher's own day/night is only used for "System"). */
-enum class WidgetTheme(val header: Int, val item: Int) {
-    SYSTEM(R.layout.widget_notes, R.layout.widget_item),
-    LIGHT(R.layout.widget_notes_light, R.layout.widget_item_light),
-    DARK(R.layout.widget_notes_dark, R.layout.widget_item_dark),
-    OLDSCHOOL(R.layout.widget_notes_os, R.layout.widget_item_os);
+enum class WidgetTheme(
+    val item: Int,
+    val background: Int,
+    val mic: Int,
+    val add: Int,
+    /** Header title view shown for this theme (the others are hidden); Old School uses a pixel-font bitmap. */
+    val title: Int,
+    val listBackground: Int = 0,
+) {
+    SYSTEM(R.layout.widget_item, R.drawable.widget_bg, R.drawable.ic_mic_widget, R.drawable.ic_add_widget, R.id.widget_title),
+    LIGHT(R.layout.widget_item_light, R.drawable.widget_bg_light, R.drawable.ic_mic_widget_light, R.drawable.ic_add_widget_light, R.id.widget_title_light),
+    DARK(R.layout.widget_item_dark, R.drawable.widget_bg_dark, R.drawable.ic_mic_widget_dark, R.drawable.ic_add_widget_dark, R.id.widget_title_dark),
+    OLDSCHOOL(R.layout.widget_item_os, R.drawable.os_widget_bg, R.drawable.ic_mic_widget_os, R.drawable.ic_add_widget_os, R.id.widget_title_img, R.drawable.os_chatbox);
+
+    /**
+     * Every theme uses the same frame layout, so a theme change is applied by the launcher as a plain re-apply of
+     * explicit background/icon/visibility actions instead of swapping layouts (which some launchers kept stale).
+     */
+    val header: Int get() = R.layout.widget_frame
 
     companion object {
         fun of(ctx: Context): WidgetTheme = when (AppSettings.theme(ctx)) {

@@ -317,7 +317,8 @@ class SettingsActivity : LockableActivity() {
         }
         findViewById<View>(R.id.update_url_btn).setOnClickListener { updater.editUpdateUrl() }
         findViewById<android.widget.TextView>(R.id.version_text).text =
-            "Josh Notes v${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})"
+            "Josh Notes v${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})" +
+                (com.josh.notes.widget.NotesWidgetProvider.status(this)?.let { "\n$it" } ?: "")
 
         // Engine
         val dictPrefs = getSharedPreferences("dictation", 0)

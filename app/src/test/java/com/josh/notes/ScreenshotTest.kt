@@ -9,6 +9,7 @@ import android.view.View
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -106,14 +107,25 @@ class ScreenshotTest {
         snapView(d.window!!.decorView, "08-dialog")
     }
 
-    private fun renderWidget(theme: String, name: String) {
-        ctx.getSharedPreferences("settings", 0).edit().putString("theme", theme).commit()
+    /** [from] = theme the widget showed before; the new look is then *re-applied* onto it, like a launcher does. */
+    private fun renderWidget(theme: String, name: String, from: String? = null) {
         val c = android.view.ContextThemeWrapper(ctx, R.style.Theme_JoshNotes)
         val dm = ctx.resources.displayMetrics
         val w = (300 * dm.density).toInt(); val h = (380 * dm.density).toInt()
         val frame = android.widget.FrameLayout(c).apply { setBackgroundColor(0xFF5C7F9E.toInt()); setPadding(40, 40, 40, 40) }
         // Same RemoteViews the launcher gets (list adapter attached manually: no launcher host here).
-        val root = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, 0, withList = false).apply(c, frame)
+        val prefs = ctx.getSharedPreferences("settings", 0)
+        val root = if (from != null) {
+            prefs.edit().putString("theme", from).commit()
+            val old = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, 0, withList = false).apply(c, frame)
+            prefs.edit().putString("theme", theme).commit()
+            val rv = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, 0, withList = false)
+            assertEquals(R.layout.widget_frame, rv.layoutId)
+            rv.reapply(c, old); old
+        } else {
+            prefs.edit().putString("theme", theme).commit()
+            com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, 0, withList = false).apply(c, frame)
+        }
         frame.addView(root, android.widget.FrameLayout.LayoutParams(w, h))
         val list = root.findViewById<android.widget.ListView>(R.id.widget_list)
         val f = com.josh.notes.widget.NotesWidgetService.Factory(ctx).apply { onDataSetChanged() }
@@ -134,6 +146,8 @@ class ScreenshotTest {
         renderWidget("OLDSCHOOL", "10-widget-oldschool")
         renderWidget("DARK", "11-widget-dark")
         renderWidget("LIGHT", "12-widget-light")
+        renderWidget("OLDSCHOOL", "13-widget-oldschool-after-system", from = "SYSTEM")
+        renderWidget("SYSTEM", "14-widget-system")
     }
 
     @Test fun editorText() {

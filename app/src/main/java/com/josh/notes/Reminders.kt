@@ -162,6 +162,12 @@ class ReminderReceiver : BroadcastReceiver() {
 class ReminderBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
-        Thread { try { Reminders.rescheduleAll(context) } finally { pending.finish() } }.start()
+        Thread {
+            try {
+                Reminders.rescheduleAll(context)
+                // App updated / rebooted: push the current theme's widget look again.
+                runCatching { com.josh.notes.widget.NotesWidgetProvider.refreshAll(context) }
+            } finally { pending.finish() }
+        }.start()
     }
 }

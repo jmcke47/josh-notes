@@ -48,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:divider="@null"
-            android:dividerHeight="6dp" />
+            android:dividerHeight="0dp" />
         <TextView
             android:id="@+id/widget_empty"
             android:layout_width="match_parent"
