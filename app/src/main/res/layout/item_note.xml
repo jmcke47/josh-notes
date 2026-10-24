@@ -34,6 +34,24 @@
                     android:maxLines="1"
                     android:textAppearance="?attr/textAppearanceTitleMedium" />
                 <ImageView
+                    android:id="@+id/memo"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="8dp"
+                    android:contentDescription="Voice memo"
+                    android:src="@drawable/ic_waveform"
+                    android:visibility="gone"
+                    app:tint="?attr/colorPrimary" />
+                <ImageView
+                    android:id="@+id/clip"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="8dp"
+                    android:contentDescription="@string/attach"
+                    android:src="@drawable/ic_attach"
+                    android:visibility="gone"
+                    app:tint="?attr/colorPrimary" />
+                <ImageView
                     android:id="@+id/bell"
                     android:layout_width="18dp"
                     android:layout_height="18dp"
@@ -59,6 +77,14 @@
                 android:maxLines="4"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant" />
+            <ImageView
+                android:id="@+id/thumb"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
             <TextView
                 android:id="@+id/date"
                 android:layout_width="match_parent"

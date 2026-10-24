@@ -1,0 +1,15 @@
+<resources>
+    <!-- "Old School" theme palette (original, fantasy-RPG inspired) -->
+    <color name="os_gold">#C8A040</color>
+    <color name="os_panel">#4A3D2A</color>
+    <color name="os_panel_dark">#33291B</color>
+    <color name="os_panel_light">#5C4C34</color>
+    <color name="os_stone">#3A342B</color>
+    <color name="os_yellow">#FFFF00</color>
+    <color name="os_orange">#FF981F</color>
+    <color name="os_text">#FFE7A0</color>
+    <color name="os_text_dim">#D9B870</color>
+    <color name="os_parchment">#D8C49A</color>
+    <color name="os_ink">#2A1E0E</color>
+    <color name="os_red">#E0482E</color>
+</resources>

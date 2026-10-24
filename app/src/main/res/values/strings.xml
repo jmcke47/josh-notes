@@ -57,4 +57,14 @@
     <string name="app_lock_desc">Require fingerprint, face or screen lock to open. Widget shows titles only.</string>
     <string name="tap_to_edit">Tap text to edit</string>
     <string name="privacy">Privacy</string>
+    <string name="attach">Attach</string>
+    <string name="play">Play</string>
+    <string name="more">More options</string>
+    <string name="backup_title">Backup &amp; sync</string>
+    <string name="backup_auto">Back up automatically (after changes and daily)</string>
+    <string name="backup_choose">Choose folder</string>
+    <string name="backup_now">Back up now</string>
+    <string name="backup_restore">Restore…</string>
+    <string name="backup_help">Pick a folder on this phone or in a cloud app that offers folders here (e.g. OneDrive, Dropbox, Nextcloud). The last 10 backups are kept, including photos and voice memos. To sync between phones, choose the same cloud folder on both. Note: the Google Drive app doesn\'t offer folder access on most phones — use a folder that Drive syncs, or Export backup from the menu.</string>
+    <string name="voice_action_title">Mic button, widget mic &amp; volume keys</string>
 </resources>

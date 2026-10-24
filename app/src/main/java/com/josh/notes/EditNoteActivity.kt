@@ -41,6 +41,10 @@ class EditNoteActivity : LockableActivity() {
     private var createdAt = 0L
     private var reminderAt = 0L
     private var reminderFired = false
+    private var repeatRule = Repeat.NONE
+    private var attachments: List<Attachment> = emptyList()
+    private var createdHere = false
+    private lateinit var panel: AttachmentsPanel
     private var lastEdited = 0L
     private var viewMode = false
 
@@ -60,7 +64,27 @@ class EditNoteActivity : LockableActivity() {
     }
     private var lastFocused: EditText? = null
     private lateinit var dictation: DictationController
-    private val volumeKeys by lazy { VolumeKeyDictation(this) { if (!AppLock.needsUnlock(this)) dictation.start() } }
+    private val volumeKeys by lazy { VolumeKeyDictation(this) { if (!AppLock.needsUnlock(this)) voiceAction() } }
+
+    /** Mic button / widget mic / volume keys: dictate, record a memo, or both (Settings). */
+    private fun voiceAction() {
+        if (viewMode) enterEdit()
+        when (VoiceAction.get(this)) {
+            VoiceAction.DICTATE -> dictation.start()
+            VoiceAction.MEMO -> panel.recordMemo(false)
+            VoiceAction.BOTH -> panel.recordMemo(true)
+        }
+    }
+
+    /** Make sure the note exists in the store (needed before attaching files). */
+    private fun ensureNoteId(): Long {
+        if (noteId == 0L) {
+            noteId = NoteStore.upsert(this, buildNote().copy(id = 0L)).id
+            createdHere = true
+            NoteStore.get(this, noteId)?.let { createdAt = it.createdAt; lastEdited = it.updatedAt }
+        }
+        return noteId
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -81,8 +105,13 @@ class EditNoteActivity : LockableActivity() {
         bodyView = findViewById(R.id.body_view)
         footer = findViewById(R.id.footer)
         reminderChip = findViewById(R.id.reminder_chip)
-        reminderChip.setOnClickListener { setReminder() }
-        reminderChip.setOnCloseIconClickListener { reminderAt = 0L; reminderFired = false; updateReminderChip() }
+        reminderChip.setOnClickListener {
+            MaterialAlertDialogBuilder(this).setTitle(R.string.reminder)
+                .setItems(arrayOf("Change date & time", "Change repeat", "Remove reminder")) { _, w ->
+                    when (w) { 0 -> setReminder(); 1 -> pickRepeat(reminderAt); 2 -> clearReminder() }
+                }.show()
+        }
+        reminderChip.setOnCloseIconClickListener { clearReminder() }
         bodyView.setOnClickListener {
             // A tap on a link is handled by LinkMovementMethod (it selects the link span) — ignore that one.
             val t = bodyView.text
@@ -98,6 +127,8 @@ class EditNoteActivity : LockableActivity() {
         }
         titleEt.addTextChangedListener(watcher); bodyEt.addTextChangedListener(watcher)
         dictation = DictationController(this) { insertAtCursor(it) }
+        panel = AttachmentsPanel(this, findViewById(R.id.attachments_box), dictation, ::ensureNoteId,
+            { attachments }, { attachments = it; save(); updateFooter() }, { insertAtCursor(it) })
 
         trackFocus(titleEt); trackFocus(bodyEt)
         addItem.setOnClickListener { addRow(CheckItem("", false), focus = true) }
@@ -114,6 +145,8 @@ class EditNoteActivity : LockableActivity() {
             createdAt = savedInstanceState.getLong("createdAt")
             reminderAt = savedInstanceState.getLong("reminderAt"); reminderFired = savedInstanceState.getBoolean("reminderFired")
             lastEdited = savedInstanceState.getLong("lastEdited")
+            repeatRule = savedInstanceState.getString("repeat")?.let { runCatching { Repeat.fromJson(org.json.JSONObject(it)) }.getOrNull() } ?: Repeat.NONE
+            attachments = note?.attachments ?: emptyList()
             val texts = savedInstanceState.getStringArrayList("itemTexts") ?: arrayListOf()
             val checks = savedInstanceState.getBooleanArray("itemChecks") ?: BooleanArray(0)
             setChecklistItems(texts.mapIndexed { i, t -> CheckItem(t, checks.getOrElse(i) { false }) })
@@ -122,6 +155,7 @@ class EditNoteActivity : LockableActivity() {
             pinned = note.pinned; color = note.color; archived = note.archived
             checklist = note.checklist; createdAt = note.createdAt
             reminderAt = note.reminderAt; reminderFired = note.reminderFired; lastEdited = note.updatedAt
+            repeatRule = note.repeat; attachments = note.attachments
             setChecklistItems(note.items)
         } else {
             intent.getStringExtra(EXTRA_TITLE)?.let { titleEt.setText(it) }
@@ -129,7 +163,7 @@ class EditNoteActivity : LockableActivity() {
             titleEt.requestFocus()
         }
         applyChecklistMode()
-        updateMenu(); updateColor(); updateReminderChip()
+        updateMenu(); updateColor(); updateReminderChip(); panel.render()
         val wantsDictation0 = intent.getBooleanExtra(EXTRA_DICTATE, false) || intent.action == ACTION_DICTATE
         if (savedInstanceState == null && note != null && !note.checklist && note.body.isNotBlank() && !wantsDictation0) enterView()
         updateFooter()
@@ -137,7 +171,8 @@ class EditNoteActivity : LockableActivity() {
         toolbar.setNavigationOnClickListener { finish() }
         toolbar.setOnMenuItemClickListener {
             when (it.itemId) {
-                R.id.action_mic -> { if (viewMode) enterEdit(); dictation.start() }
+                R.id.action_mic -> voiceAction()
+                R.id.action_attach -> { if (viewMode) enterEdit(); panel.showAddMenu() }
                 R.id.action_reminder -> setReminder()
                 R.id.action_pin -> { pinned = !pinned; updateMenu()
                     Snackbar.make(toolbar, if (pinned) "Pinned" else "Unpinned", Snackbar.LENGTH_SHORT).show() }
@@ -155,7 +190,7 @@ class EditNoteActivity : LockableActivity() {
                 (intent.getBooleanExtra(EXTRA_DICTATE, false) || intent.action == ACTION_DICTATE)
         if (wantsDictation) {
             (if (checklist) null else bodyEt)?.requestFocus()
-            if (AppLock.needsUnlock(this)) dictateAfterUnlock = true else bodyEt.post { dictation.start() }
+            if (AppLock.needsUnlock(this)) dictateAfterUnlock = true else bodyEt.post { voiceAction() }
         }
     }
 
@@ -164,7 +199,7 @@ class EditNoteActivity : LockableActivity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent) = volumeKeys.onKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
 
     private var dictateAfterUnlock = false
-    override fun onUnlocked() { if (dictateAfterUnlock) { dictateAfterUnlock = false; bodyEt.post { dictation.start() } } }
+    override fun onUnlocked() { if (dictateAfterUnlock) { dictateAfterUnlock = false; bodyEt.post { voiceAction() } } }
 
     // ---------------------------------------------------------------- view / edit mode (tappable links)
 
@@ -201,7 +236,10 @@ class EditNoteActivity : LockableActivity() {
     private fun updateReminderChip() {
         reminderChip.visibility = if (reminderAt > 0) View.VISIBLE else View.GONE
         if (reminderAt > 0) {
-            reminderChip.text = ReminderFormat.short(this, reminderAt) + if (reminderAt <= System.currentTimeMillis()) " · past" else ""
+            val time = android.text.format.DateFormat.getTimeFormat(this).format(reminderAt)
+            reminderChip.text = if (repeatRule.isRepeating)
+                repeatRule.describe(reminderAt, time) + " · next " + ReminderFormat.short(this, reminderAt)
+            else ReminderFormat.short(this, reminderAt) + if (reminderAt <= System.currentTimeMillis()) " · past" else ""
             reminderChip.isCloseIconVisible = true
         }
         toolbar.menu.findItem(R.id.action_reminder)?.icon?.mutate()?.alpha = if (reminderAt > 0) 255 else 110
@@ -246,15 +284,73 @@ class EditNoteActivity : LockableActivity() {
                 if (at <= System.currentTimeMillis()) {
                     Snackbar.make(toolbar, "That time has already passed", Snackbar.LENGTH_SHORT).show(); return@addOnPositiveButtonClickListener
                 }
-                reminderAt = at; reminderFired = false
-                updateReminderChip()
-                save() // schedule straight away
-                if (!Reminders.canExact(this)) offerExactAlarms()
-                else Snackbar.make(toolbar, "Reminder set for " + ReminderFormat.short(this, at), Snackbar.LENGTH_SHORT).show()
+                pickRepeat(at)
             }
             tp.show(supportFragmentManager, "time")
         }
         dp.show(supportFragmentManager, "date")
+    }
+
+    private fun clearReminder() {
+        reminderAt = 0L; reminderFired = false; repeatRule = Repeat.NONE; updateReminderChip(); save()
+    }
+
+    /** Step 3 of setting a reminder: repetition. */
+    private fun pickRepeat(at: Long) {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = at }
+        val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
+        val opts = arrayOf("Doesn't repeat", "Every day", "Every week…", "Every month (on the ${Repeat.ordinal(cal.get(java.util.Calendar.DAY_OF_MONTH))})",
+            "Every year", "Every N days…")
+        val cur = when (repeatRule.type) { Repeat.Type.NONE -> 0; Repeat.Type.DAILY -> 1; Repeat.Type.WEEKLY -> 2
+            Repeat.Type.MONTHLY -> 3; Repeat.Type.YEARLY -> 4; Repeat.Type.EVERY_N_DAYS -> 5 }
+        MaterialAlertDialogBuilder(this).setTitle("Repeat")
+            .setSingleChoiceItems(opts, cur) { d, w ->
+                d.dismiss()
+                when (w) {
+                    0 -> applyReminder(at, Repeat.NONE)
+                    1 -> applyReminder(at, Repeat(Repeat.Type.DAILY))
+                    2 -> pickWeekdays(at, if (repeatRule.type == Repeat.Type.WEEKLY && repeatRule.days.isNotEmpty()) repeatRule.days else setOf(dow))
+                    3 -> applyReminder(at, Repeat(Repeat.Type.MONTHLY, dayOfMonth = cal.get(java.util.Calendar.DAY_OF_MONTH)))
+                    4 -> applyReminder(at, Repeat(Repeat.Type.YEARLY))
+                    5 -> pickEveryN(at)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null).show()
+    }
+
+    private fun pickWeekdays(at: Long, initial: Set<Int>) {
+        val order = Repeat.ORDER
+        val checked = order.map { it in initial }.toBooleanArray()
+        MaterialAlertDialogBuilder(this).setTitle("Repeat on")
+            .setMultiChoiceItems(order.map { Repeat.dayName(it) }.toTypedArray(), checked) { _, i, c -> checked[i] = c }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val days = order.filterIndexed { i, _ -> checked[i] }.toSet()
+                if (days.isEmpty()) applyReminder(at, Repeat.NONE)
+                else { val r = Repeat(Repeat.Type.WEEKLY, days); applyReminder(r.first(at), r) }
+            }.show()
+    }
+
+    private fun pickEveryN(at: Long) {
+        val input = EditText(this).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER; setText(repeatRule.every.coerceAtLeast(2).toString()); selectAll() }
+        val pad = (20 * resources.displayMetrics.density).toInt()
+        MaterialAlertDialogBuilder(this).setTitle("Repeat every … days")
+            .setView(android.widget.FrameLayout(this).apply { setPadding(pad, pad / 2, pad, 0); addView(input) })
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val n = input.text.toString().toIntOrNull()?.coerceIn(1, 3650) ?: 1
+                applyReminder(at, if (n == 1) Repeat(Repeat.Type.DAILY) else Repeat(Repeat.Type.EVERY_N_DAYS, every = n))
+            }.show()
+    }
+
+    private fun applyReminder(at: Long, rule: Repeat) {
+        var t = at
+        if (t <= System.currentTimeMillis()) t = rule.next(t, System.currentTimeMillis()).takeIf { it > 0 } ?: t
+        reminderAt = t; reminderFired = false; repeatRule = rule
+        updateReminderChip()
+        save() // schedule straight away
+        if (!Reminders.canExact(this)) offerExactAlarms()
+        else Snackbar.make(toolbar, "Reminder set: " + reminderChip.text, Snackbar.LENGTH_SHORT).show()
     }
 
     private fun offerExactAlarms() {
@@ -269,7 +365,7 @@ class EditNoteActivity : LockableActivity() {
             }.show()
     }
 
-    override fun onDestroy() { dictation.release(); super.onDestroy() }
+    override fun onDestroy() { panel.release(); dictation.release(); super.onDestroy() }
 
     private fun trackFocus(et: EditText) {
         et.setOnFocusChangeListener { v, has -> if (has) lastFocused = v as EditText }
@@ -312,7 +408,15 @@ class EditNoteActivity : LockableActivity() {
         et.setText(item.text)
         cb.isChecked = item.checked
         strike(et, item.checked)
-        cb.setOnCheckedChangeListener { _, c -> strike(et, c) }
+        cb.setOnCheckedChangeListener { _, c ->
+            strike(et, c)
+            val items = currentItems().filter { it.text.isNotBlank() }
+            if (c && items.size >= 2 && items.all { it.checked }) {
+                val before = Levels.level(getSharedPreferences("settings", 0).getInt("completions", 0))
+                val lvl = Levels.award(this)
+                Levels.celebrate(this, lvl, lvl > before)
+            }
+        }
         et.doAfterTextChangedCompat { updateFooter() }
         trackFocus(et)
         et.imeOptions = EditorInfo.IME_ACTION_NEXT
@@ -402,14 +506,21 @@ class EditNoteActivity : LockableActivity() {
         dialog.show()
     }
 
-    private fun buildNote() = Note(
-        id = noteId, title = titleEt.text.toString(),
-        body = if (checklist) "" else bodyEt.text.toString(),
-        updatedAt = System.currentTimeMillis(), createdAt = createdAt,
-        pinned = pinned, color = color, archived = archived, checklist = checklist,
-        items = if (checklist) currentItems() else emptyList(),
-        reminderAt = reminderAt, reminderFired = reminderFired,
-    )
+    /** Editor-owned fields on top of the stored note (keeps snooze/trash state set elsewhere). */
+    private fun buildNote(): Note {
+        val base = noteId.takeIf { it != 0L }?.let { NoteStore.get(this, it) } ?: Note(noteId, "", "", System.currentTimeMillis(), createdAt)
+        val reminderChanged = base.reminderAt != reminderAt || base.repeat != repeatRule
+        return base.copy(
+            id = noteId, title = titleEt.text.toString(),
+            body = if (checklist) "" else bodyEt.text.toString(),
+            createdAt = if (createdAt > 0) createdAt else base.createdAt,
+            pinned = pinned, color = color, archived = archived, checklist = checklist,
+            items = if (checklist) currentItems() else emptyList(),
+            reminderAt = reminderAt, reminderFired = reminderFired, repeat = repeatRule,
+            snoozeAt = if (reminderChanged) 0L else base.snoozeAt,
+            attachments = attachments,
+        )
+    }
 
     private fun share() {
         val text = buildNote().shareText()
@@ -443,9 +554,10 @@ class EditNoteActivity : LockableActivity() {
         if (existing == null && n.isEmpty) return
         if (existing != null) {
             val contentSame = existing.title == n.title && existing.body == n.body && existing.items == n.items &&
-                    existing.checklist == n.checklist
+                    existing.checklist == n.checklist && existing.attachments == n.attachments
             val metaSame = existing.pinned == n.pinned && existing.color == n.color && existing.archived == n.archived &&
-                    existing.reminderAt == n.reminderAt && existing.reminderFired == n.reminderFired
+                    existing.reminderAt == n.reminderAt && existing.reminderFired == n.reminderFired &&
+                    existing.repeat == n.repeat && existing.snoozeAt == n.snoozeAt
             if (contentSame && metaSame) return
             // Only bump "edited" time when the content changed.
             noteId = NoteStore.upsert(this, n.copy(createdAt = existing.createdAt, updatedAt = existing.updatedAt,
@@ -459,7 +571,10 @@ class EditNoteActivity : LockableActivity() {
 
     override fun onPause() {
         super.onPause()
+        panel.stopRecordingIfAny(); panel.stopPlayer()
         save()
+        // A note created only to hold an attachment that was then removed: don't leave an empty note behind.
+        if (isFinishing && createdHere && noteId != 0L && NoteStore.get(this, noteId)?.isEmpty == true) NoteStore.deleteForever(this, noteId)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -470,6 +585,7 @@ class EditNoteActivity : LockableActivity() {
         outState.putLong("createdAt", createdAt)
         outState.putLong("reminderAt", reminderAt); outState.putBoolean("reminderFired", reminderFired)
         outState.putLong("lastEdited", lastEdited)
+        outState.putString("repeat", repeatRule.toJson().toString())
         val items = currentItems()
         outState.putStringArrayList("itemTexts", ArrayList(items.map { it.text }))
         outState.putBooleanArray("itemChecks", items.map { it.checked }.toBooleanArray())

@@ -70,6 +70,11 @@ object AppLock {
 open class LockableActivity : AppCompatActivity() {
     private var cover: View? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        if (AppSettings.oldSchool(this)) setTheme(R.style.Theme_JoshNotes_OldSchool)
+        super.onCreate(savedInstanceState)
+    }
+
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         if (AppLock.needsUnlock(this)) showCover()

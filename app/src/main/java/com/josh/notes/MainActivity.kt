@@ -91,6 +91,7 @@ class MainActivity : LockableActivity() {
         }
         mode = runCatching { Mode.valueOf(savedInstanceState?.getString("mode") ?: "NOTES") }.getOrDefault(Mode.NOTES)
 
+        if (savedInstanceState == null) checkNewerBackup()
         updateController = UpdateController(this)
         toolbar = findViewById(R.id.toolbar)
         setupMenu()
@@ -132,6 +133,33 @@ class MainActivity : LockableActivity() {
         volumeKeys.onKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
 
     override fun onUnlocked() = refresh()
+
+    /** Sync: if the backup folder holds a newer backup from another phone, offer to merge it. */
+    private fun checkNewerBackup() {
+        if (Backup.folder(this) == null) return
+        Thread {
+            val found = runCatching { Backup.newerBackup(this) }.getOrNull() ?: return@Thread
+            runOnUiThread {
+                if (isFinishing) return@runOnUiThread
+                val (info, meta) = found
+                val from = meta.optString("deviceModel").ifBlank { "another device" }
+                Snackbar.make(root, "Newer notes backup from $from", Snackbar.LENGTH_INDEFINITE)
+                    .setAction("Merge") {
+                        Thread {
+                            val r = runCatching { Backup.restoreMerge(this, info.uri) }
+                            runOnUiThread {
+                                refresh()
+                                Snackbar.make(root, r.fold({ "Merged: $it notes updated or added" },
+                                    { "Couldn't merge (storage app offline or slow?): ${it.message}" }), Snackbar.LENGTH_LONG).show()
+                            }
+                        }.start()
+                    }
+                    .addCallback(object : Snackbar.Callback() {
+                        override fun onDismissed(b: Snackbar?, event: Int) { if (event != DISMISS_EVENT_ACTION) Backup.dismiss(this@MainActivity, info.name) }
+                    }).show()
+            }
+        }.start()
+    }
 
     override fun onResume() {
         super.onResume()
@@ -220,7 +248,8 @@ class MainActivity : LockableActivity() {
         val q = searchQuery.trim().lowercase()
         val notes = NoteStore.all(this)
             .filter { when (mode) { Mode.TRASH -> it.inTrash; Mode.ARCHIVE -> !it.inTrash && it.archived; Mode.NOTES -> !it.inTrash && !it.archived } }
-            .filter { q.isEmpty() || it.title.lowercase().contains(q) || it.contentText.lowercase().contains(q) }
+            .filter { q.isEmpty() || it.title.lowercase().contains(q) || it.contentText.lowercase().contains(q) ||
+                    it.attachments.any { a -> a.name.lowercase().contains(q) || a.transcript.lowercase().contains(q) } }
             .let { if (mode == Mode.TRASH) it.sortedByDescending { n -> n.deletedAt } else it.sortedFor(sortMode) }
         adapter.submit(notes)
         empty.setText(when { q.isNotEmpty() -> R.string.empty_search; mode == Mode.ARCHIVE -> R.string.empty_archive; mode == Mode.TRASH -> R.string.empty_trash; else -> R.string.empty_notes })
@@ -269,6 +298,7 @@ class MainActivity : LockableActivity() {
     }
 
     private class NotesAdapter(val onClick: (Note) -> Unit) : RecyclerView.Adapter<NotesAdapter.VH>() {
+        private val thumbs = java.util.concurrent.Executors.newFixedThreadPool(2)
         private var items: List<Note> = emptyList()
         init { setHasStableIds(true) }
 
@@ -286,6 +316,9 @@ class MainActivity : LockableActivity() {
             val pin: ImageView = v.findViewById(R.id.pin)
             val bell: ImageView = v.findViewById(R.id.bell)
             val strip: View = v.findViewById(R.id.color_strip)
+            val clip: ImageView = v.findViewById(R.id.clip)
+            val memo: ImageView = v.findViewById(R.id.memo)
+            val thumb: ImageView = v.findViewById(R.id.thumb)
         }
 
         override fun getItemId(position: Int) = items[position].id
@@ -315,6 +348,19 @@ class MainActivity : LockableActivity() {
             val color = NoteColors.palette[n.color]
             h.strip.visibility = if (n.color == 0) View.GONE else View.VISIBLE
             h.strip.setBackgroundColor(color)
+            h.memo.visibility = if (n.hasAudio) View.VISIBLE else View.GONE
+            h.clip.visibility = if (n.hasFiles || (n.hasImages && n.inTrash)) View.VISIBLE else View.GONE
+            val img = n.attachments.firstOrNull { it.kind == "image" }
+            h.thumb.tag = img?.id
+            h.thumb.setImageDrawable(null)
+            h.thumb.visibility = if (img != null) View.VISIBLE else View.GONE
+            if (img != null) {
+                val px = (56 * ctx.resources.displayMetrics.density).toInt()
+                thumbs.execute {
+                    val bmp = runCatching { Attachments.thumbnail(ctx, n.id, img, px) }.getOrNull()
+                    h.thumb.post { if (h.thumb.tag == img.id) h.thumb.setImageBitmap(bmp) }
+                }
+            }
             h.itemView.setOnClickListener { onClick(n) }
         }
     }

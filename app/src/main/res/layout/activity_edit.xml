@@ -83,6 +83,12 @@
                 android:orientation="vertical"
                 android:paddingHorizontal="8dp"
                 android:visibility="gone" />
+            <LinearLayout
+                android:id="@+id/attachments_box"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="8dp" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/add_item"
                 style="?attr/borderlessButtonStyle"

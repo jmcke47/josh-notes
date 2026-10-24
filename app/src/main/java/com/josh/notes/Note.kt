@@ -5,6 +5,33 @@ import org.json.JSONObject
 
 data class CheckItem(val text: String, val checked: Boolean)
 
+/** A file attached to a note, stored at filesDir/attachments/<noteId>/<file>. */
+data class Attachment(
+    val id: String,
+    val file: String,          // file name inside the note's attachment dir
+    val name: String,          // display name
+    val mime: String,
+    val size: Long,
+    val kind: String,          // "image" | "audio" | "file"
+    val durationMs: Long = 0L,
+    val createdAt: Long = 0L,
+    val transcript: String = "",
+) {
+    val isImage get() = kind == "image"
+    val isAudio get() = kind == "audio"
+
+    fun toJson(): JSONObject = JSONObject().put("id", id).put("file", file).put("name", name).put("mime", mime)
+        .put("size", size).put("kind", kind).put("durationMs", durationMs).put("createdAt", createdAt)
+        .put("transcript", transcript)
+
+    companion object {
+        fun fromJson(o: JSONObject) = Attachment(
+            o.getString("id"), o.getString("file"), o.optString("name", o.getString("file")),
+            o.optString("mime", "application/octet-stream"), o.optLong("size"), o.optString("kind", "file"),
+            o.optLong("durationMs"), o.optLong("createdAt"), o.optString("transcript"))
+    }
+}
+
 data class Note(
     val id: Long,
     val title: String,
@@ -19,7 +46,13 @@ data class Note(
     val reminderAt: Long = 0L,       // epoch ms, 0 = no reminder
     val reminderFired: Boolean = false,
     val deletedAt: Long = 0L,        // epoch ms, 0 = not in trash
+    val repeat: Repeat = Repeat.NONE,
+    val snoozeAt: Long = 0L,         // pending snooze alarm (doesn't change the series)
+    val attachments: List<Attachment> = emptyList(),
 ) {
+    val hasImages get() = attachments.any { it.isImage }
+    val hasAudio get() = attachments.any { it.isAudio }
+    val hasFiles get() = attachments.any { !it.isAudio }
     val inTrash: Boolean get() = deletedAt > 0
     val hasReminder: Boolean get() = reminderAt > 0
 
@@ -34,7 +67,7 @@ data class Note(
         get() = if (checklist) items.joinToString("\n") { (if (it.checked) "☑ " else "☐ ") + it.text } else body
 
     val isEmpty: Boolean
-        get() = title.isBlank() && body.isBlank() && items.all { it.text.isBlank() }
+        get() = title.isBlank() && body.isBlank() && items.all { it.text.isBlank() } && attachments.isEmpty()
 
     fun shareText(): String = listOf(title.trim(), contentText.trim()).filter { it.isNotEmpty() }.joinToString("\n\n")
 
@@ -44,6 +77,8 @@ data class Note(
         .put("pinned", pinned).put("color", color).put("archived", archived)
         .put("checklist", checklist)
         .put("reminderAt", reminderAt).put("reminderFired", reminderFired).put("deletedAt", deletedAt)
+        .put("repeat", repeat.toJson()).put("snoozeAt", snoozeAt)
+        .put("attachments", JSONArray().apply { attachments.forEach { put(it.toJson()) } })
         .put("items", JSONArray().apply {
             items.forEach { put(JSONObject().put("text", it.text).put("checked", it.checked)) }
         })
@@ -74,6 +109,14 @@ data class Note(
                 reminderAt = o.optLong("reminderAt", 0L).coerceAtLeast(0L),
                 reminderFired = o.optBoolean("reminderFired"),
                 deletedAt = o.optLong("deletedAt", 0L).coerceAtLeast(0L),
+                repeat = o.optJSONObject("repeat")?.let { Repeat.fromJson(it) } ?: Repeat.NONE,
+                snoozeAt = o.optLong("snoozeAt", 0L).coerceAtLeast(0L),
+                attachments = buildList {
+                    val arr = o.optJSONArray("attachments")
+                    if (arr != null) for (i in 0 until arr.length()) {
+                        arr.optJSONObject(i)?.let { a -> runCatching { Attachment.fromJson(a) }.onSuccess { add(it) } }
+                    }
+                },
             )
         }
     }

@@ -9,7 +9,8 @@ import com.google.android.material.color.DynamicColorsOptions
 enum class ThemeMode(val label: String, val night: Int) {
     SYSTEM("System default", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM),
     LIGHT("Light", AppCompatDelegate.MODE_NIGHT_NO),
-    DARK("Dark", AppCompatDelegate.MODE_NIGHT_YES);
+    DARK("Dark", AppCompatDelegate.MODE_NIGHT_YES),
+    OLDSCHOOL("Old School (pixel adventure style)", AppCompatDelegate.MODE_NIGHT_YES);
 }
 
 object AppSettings {
@@ -23,7 +24,11 @@ object AppSettings {
         AppCompatDelegate.setDefaultNightMode(t.night) // recreates open activities immediately
     }
 
-    fun dynamicColor(ctx: Context) = p(ctx).getBoolean("dynamic_color", false)
+    fun dynamicColor(ctx: Context) = p(ctx).getBoolean("dynamic_color", false) && theme(ctx) != ThemeMode.OLDSCHOOL
+    fun oldSchool(ctx: Context) = theme(ctx) == ThemeMode.OLDSCHOOL
+    /** "Level up" banner when finishing a checklist / reminder (Old School theme only). */
+    fun levelUps(ctx: Context) = p(ctx).getBoolean("level_ups", true)
+    fun setLevelUps(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("level_ups", on).apply()
     fun setDynamicColor(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("dynamic_color", on).apply()
 }
 
@@ -42,7 +47,8 @@ class NotesApp : Application() {
             override fun onActivityDestroyed(a: android.app.Activity) {}
         })
         // Re-arm reminders (covers app updates and force-stops); cheap, runs off the main thread.
-        Thread { runCatching { Reminders.rescheduleAll(this) } }.start()
+        Thread { runCatching { Reminders.rescheduleAll(this) }; runCatching { Attachments.cleanupOrphans(this, NoteStore.all(this)) } }.start()
+        runCatching { Backup.schedule(this) }
         DynamicColors.applyToActivitiesIfAvailable(this,
             DynamicColorsOptions.Builder().setPrecondition { a, _ -> AppSettings.dynamicColor(a) }.build())
     }

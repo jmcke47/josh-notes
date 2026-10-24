@@ -47,6 +47,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ImageViewerActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ShareReceiverActivity"
             android:exported="true"
             android:excludeFromRecents="true"

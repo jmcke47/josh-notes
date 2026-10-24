@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sunken slot (dark top-left, light bottom-right) for widget list items. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape><solid android:color="#5E4E33" /></shape></item>
+    <item android:right="2dp" android:bottom="2dp"><shape><solid android:color="#17110A" /></shape></item>
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp"><shape><solid android:color="@color/os_panel_dark" /></shape></item>
+</layer-list>

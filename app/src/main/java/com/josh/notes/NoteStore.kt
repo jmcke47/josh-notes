@@ -68,7 +68,11 @@ object NoteStore {
         cache = list
         // Permanently remove notes that have been in the trash for > 30 days.
         val cutoff = System.currentTimeMillis() - TRASH_MS
-        if (!loadFailed && list.removeAll { it.inTrash && it.deletedAt < cutoff }) persist(ctx, list)
+        val expired = list.filter { it.inTrash && it.deletedAt < cutoff }
+        if (!loadFailed && expired.isNotEmpty()) {
+            list.removeAll(expired.toSet()); persist(ctx, list)
+            expired.forEach { Attachments.deleteAll(ctx, it.id) }
+        }
         return list
     }
 
@@ -84,7 +88,10 @@ object NoteStore {
     const val TRASH_DAYS = 30
     private const val TRASH_MS = TRASH_DAYS * 24L * 3600_000L
 
-    private fun changed(ctx: Context) = NotesWidgetProvider.refreshAll(ctx)
+    private fun changed(ctx: Context) {
+        NotesWidgetProvider.refreshAll(ctx)
+        Backup.onLocalChange(ctx)
+    }
 
     fun all(ctx: Context): List<Note> = synchronized(lock) { load(ctx).toList() }
 
@@ -137,7 +144,7 @@ object NoteStore {
             val idx = list.indexOfFirst { it.id == id }
             if (idx < 0) null else list.removeAt(idx).also { persist(ctx, list) }
         }
-        removed?.let { Reminders.cancel(ctx, it.id) }
+        removed?.let { Reminders.cancel(ctx, it.id); Attachments.deleteAll(ctx, it.id) }
         changed(ctx)
         return removed
     }
@@ -153,20 +160,46 @@ object NoteStore {
 
     fun exportJson(ctx: Context): String = synchronized(lock) { serialize(load(ctx)) }
 
-    /** Merge imported notes: same id -> keep the newer edit; new ids added. Returns (added, updated). */
-    fun importJson(ctx: Context, text: String): Pair<Int, Int> {
-        val incoming = parse(text)
-        var added = 0; var updated = 0
+    /** Merge: same id -> keep the newer edit; new ids added. Returns ids taken from [incoming]. */
+    fun mergeIncoming(ctx: Context, incoming: List<Note>): Set<Long> {
+        val taken = mutableSetOf<Long>()
         synchronized(lock) {
             val list = load(ctx)
             for (n in incoming) {
                 val idx = list.indexOfFirst { it.id == n.id }
-                if (idx < 0) { list += n; added++ }
-                else if (n.updatedAt > list[idx].updatedAt) { list[idx] = n; updated++ }
+                if (idx < 0) { list += n; taken += n.id }
+                else if (n.updatedAt > list[idx].updatedAt ||
+                    (n.updatedAt == list[idx].updatedAt && n.deletedAt != list[idx].deletedAt && n.deletedAt == 0L)) {
+                    list[idx] = n; taken += n.id
+                }
             }
-            if (added + updated > 0) persist(ctx, list)
+            if (taken.isNotEmpty()) persist(ctx, list)
         }
+        Reminders.rescheduleAll(ctx)
         changed(ctx)
-        return added to updated
+        return taken
+    }
+
+    /** Replace every note (restore-replace). Caller must have made a safety backup first. */
+    fun replaceAll(ctx: Context, notes: List<Note>) {
+        synchronized(lock) {
+            val list = load(ctx)
+            list.forEach { Reminders.cancel(ctx, it.id) }
+            list.clear(); list += notes
+            persist(ctx, list)
+        }
+        Reminders.rescheduleAll(ctx)
+        changed(ctx)
+    }
+
+    fun maxUpdatedAt(ctx: Context): Long = all(ctx).maxOfOrNull { maxOf(it.updatedAt, it.deletedAt) } ?: 0L
+
+    /** Merge imported notes (JSON backup, no attachments). Returns (added, updated). */
+    fun importJson(ctx: Context, text: String): Pair<Int, Int> {
+        val incoming = parse(text)
+        val before = all(ctx).map { it.id }.toSet()
+        val taken = mergeIncoming(ctx, incoming)
+        val added = taken.count { it !in before }
+        return added to (taken.size - added)
     }
 }

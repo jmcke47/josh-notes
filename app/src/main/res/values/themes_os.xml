@@ -1,0 +1,185 @@
+<resources>
+    <!-- "Old School" theme: stone background, dark-brown gold-bordered panels, yellow/orange pixel text. -->
+    <style name="Theme.JoshNotes.OldSchool" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@drawable/os_stone_bg</item>
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+        <item name="colorPrimary">@color/os_orange</item>
+        <item name="colorOnPrimary">@color/os_ink</item>
+        <item name="colorPrimaryContainer">@color/os_panel_light</item>
+        <item name="colorOnPrimaryContainer">@color/os_yellow</item>
+        <item name="colorSecondary">@color/os_yellow</item>
+        <item name="colorOnSecondary">@color/os_ink</item>
+        <item name="colorSecondaryContainer">@color/os_panel_light</item>
+        <item name="colorOnSecondaryContainer">@color/os_yellow</item>
+        <item name="colorTertiary">@color/os_gold</item>
+        <item name="colorError">@color/os_red</item>
+        <item name="android:colorBackground">@color/os_stone</item>
+        <item name="colorOnBackground">@color/os_text</item>
+        <item name="colorSurface">@color/os_panel</item>
+        <item name="colorOnSurface">@color/os_text</item>
+        <item name="colorOnSurfaceVariant">@color/os_text_dim</item>
+        <item name="colorSurfaceVariant">@color/os_panel_light</item>
+        <item name="colorSurfaceContainerLowest">@color/os_panel_dark</item>
+        <item name="colorSurfaceContainerLow">@color/os_panel_dark</item>
+        <item name="colorSurfaceContainer">@color/os_panel</item>
+        <item name="colorSurfaceContainerHigh">@color/os_panel</item>
+        <item name="colorSurfaceContainerHighest">@color/os_panel_light</item>
+        <item name="colorOutline">@color/os_gold</item>
+        <item name="colorOutlineVariant">#7A6236</item>
+        <item name="android:textColorPrimary">@color/os_text</item>
+        <item name="android:textColorSecondary">@color/os_text_dim</item>
+        <item name="android:textColorHint">#A08A5A</item>
+        <item name="android:statusBarColor">@color/os_panel_dark</item>
+        <item name="android:navigationBarColor">@color/os_panel_dark</item>
+        <item name="materialCardViewStyle">@style/Widget.OldSchool.Card</item>
+        <item name="materialButtonStyle">@style/Widget.OldSchool.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.OldSchool.Button.Outlined</item>
+        <item name="extendedFloatingActionButtonStyle">@style/Widget.OldSchool.Fab</item>
+        <item name="floatingActionButtonStyle">@style/Widget.OldSchool.SmallFab</item>
+        <item name="toolbarStyle">@style/Widget.OldSchool.Toolbar</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.OldSchool.Dialog</item>
+        <item name="shapeAppearanceSmallComponent">@style/Shape.OldSchool</item>
+        <item name="shapeAppearanceMediumComponent">@style/Shape.OldSchool</item>
+        <item name="shapeAppearanceLargeComponent">@style/Shape.OldSchool</item>
+        <item name="shapeAppearanceCornerSmall">@style/Shape.OldSchool</item>
+        <item name="shapeAppearanceCornerMedium">@style/Shape.OldSchool</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.OldSchool</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/Shape.OldSchool</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.OldSchool.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.OldSchool.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.OldSchool.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.OldSchool.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.OldSchool.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.OldSchool.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.OldSchool.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.OldSchool.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.OldSchool.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.OldSchool.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.OldSchool.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.OldSchool.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.OldSchool.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.OldSchool.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.OldSchool.LabelSmall</item>
+    </style>
+
+    <style name="Shape.OldSchool" parent="">
+        <item name="cornerFamily">cut</item>
+        <item name="cornerSize">3dp</item>
+    </style>
+    <style name="Widget.OldSchool.Card" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardBackgroundColor">@color/os_panel</item>
+        <item name="strokeColor">@color/os_gold</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cardCornerRadius">2dp</item>
+    </style>
+    <style name="Widget.OldSchool.Button" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/os_orange</item>
+        <item name="android:textColor">@color/os_ink</item>
+        <item name="strokeColor">@color/os_yellow</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="shapeAppearance">@style/Shape.OldSchool</item>
+    </style>
+    <style name="Widget.OldSchool.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">@color/os_yellow</item>
+        <item name="strokeColor">@color/os_gold</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="backgroundTint">@color/os_panel_dark</item>
+        <item name="shapeAppearance">@style/Shape.OldSchool</item>
+    </style>
+    <style name="Widget.OldSchool.Fab" parent="Widget.Material3.ExtendedFloatingActionButton.Icon.Primary">
+        <item name="backgroundTint">@color/os_orange</item>
+        <item name="android:textColor">@color/os_ink</item>
+        <item name="iconTint">@color/os_ink</item>
+        <item name="strokeColor">@color/os_yellow</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="shapeAppearanceOverlay">@style/Shape.OldSchool</item>
+    </style>
+    <style name="Widget.OldSchool.SmallFab" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="backgroundTint">@color/os_orange</item>
+        <item name="tint">@color/os_ink</item>
+        <item name="shapeAppearanceOverlay">@style/Shape.OldSchool</item>
+    </style>
+    <style name="Widget.OldSchool.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextColor">@color/os_yellow</item>
+        <item name="subtitleTextColor">@color/os_orange</item>
+    </style>
+    <style name="ThemeOverlay.OldSchool.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="android:background">@drawable/os_panel</item>
+        <item name="colorSurface">@color/os_panel</item>
+        <item name="colorSurfaceContainerHigh">@color/os_panel</item>
+        <item name="colorOnSurface">@color/os_text</item>
+        <item name="colorPrimary">@color/os_yellow</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/OldSchool.DialogTitle</item>
+        <item name="buttonBarPositiveButtonStyle">@style/OldSchool.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/OldSchool.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/OldSchool.DialogButton</item>
+    </style>
+    <style name="OldSchool.DialogTitle" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">@color/os_orange</item>
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="OldSchool.DialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/os_yellow</item>
+    </style>
+    <style name="TextAppearance.OldSchool.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+    <style name="TextAppearance.OldSchool.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/pixelify_sans</item>
+        <item name="fontFamily">@font/pixelify_sans</item>
+    </style>
+</resources>

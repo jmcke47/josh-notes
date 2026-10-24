@@ -72,7 +72,7 @@ class DictationController(
         set(v) = prefs.edit { putString("engine", v.name) }
 
     private val modelDir get() = File(activity.filesDir, MODEL_NAME)
-    private fun modelReady() = File(modelDir, "am/final.mdl").exists() || File(modelDir, "conf/model.conf").exists()
+    fun modelReady() = File(modelDir, "am/final.mdl").exists() || File(modelDir, "conf/model.conf").exists()
 
     private fun onDeviceSystemAvailable() =
         Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(activity)
@@ -207,9 +207,22 @@ class DictationController(
         }
     }
 
+    /** Load (or reuse) the Vosk model; call off the main thread. */
+    fun loadModel(): Model = voskModel ?: Model(modelDir.absolutePath).also { voskModel = it }
+
+    /** Ensure the offline model exists, offering the one-time download; then runs [then] on the main thread. */
+    fun withVoskModel(reason: String, then: () -> Unit) {
+        if (modelReady()) { then(); return }
+        MaterialAlertDialogBuilder(activity)
+            .setTitle("Download offline voice model?")
+            .setMessage("$reason needs the offline English model (about $MODEL_SIZE_MB MB, one time). Speech never leaves your phone.")
+            .setPositiveButton("Download") { _, _ -> downloadModel(then) }
+            .setNegativeButton(android.R.string.cancel, null).show()
+    }
+
     private fun liveVosk() = (voskFinals.toString() + " " + voskPartial).trim().ifEmpty { "Speak now…" }
 
-    private fun downloadModel(then: () -> Unit) {
+    fun downloadModel(then: () -> Unit) {
         val bar = LinearProgressIndicator(activity).apply { max = 100; isIndeterminate = true }
         val box = LinearLayout(activity).apply {
             val p = (24 * resources.displayMetrics.density).toInt(); setPadding(p, p / 2, p, p / 2); addView(bar)

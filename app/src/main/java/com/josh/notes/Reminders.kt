@@ -34,21 +34,28 @@ object Reminders {
     fun canNotify(ctx: Context) = Build.VERSION.SDK_INT < 33 ||
             ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    private fun firePi(ctx: Context, id: Long): PendingIntent = PendingIntent.getBroadcast(
-        ctx, id.hashCode(),
-        Intent(ctx, ReminderReceiver::class.java).setAction(ACTION_FIRE).putExtra(EXTRA_ID, id),
+    const val EXTRA_SNOOZE = "snooze"
+
+    private fun firePi(ctx: Context, id: Long, snooze: Boolean = false): PendingIntent = PendingIntent.getBroadcast(
+        ctx, if (snooze) id.hashCode() xor 0x5A5A5A5 else id.hashCode(),
+        Intent(ctx, ReminderReceiver::class.java).setAction(ACTION_FIRE).putExtra(EXTRA_ID, id).putExtra(EXTRA_SNOOZE, snooze),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
     /** Bring the alarm in line with the note's state (called after every save). */
     fun sync(ctx: Context, n: Note) {
         val c = ctx.applicationContext
-        if (!n.hasReminder || n.reminderFired || n.inTrash) { cancelAlarm(c, n.id) ; return }
-        if (n.reminderAt <= System.currentTimeMillis()) { fire(c, n.id); return }
+        val now = System.currentTimeMillis()
+        // Snooze alarm (separate from the series)
+        if (n.snoozeAt > 0 && !n.inTrash && n.hasReminder) {
+            if (n.snoozeAt <= now) { fire(c, n.id, snooze = true); return } else schedule(c, n.id, n.snoozeAt, snooze = true)
+        } else cancelAlarm(c, n.id, snooze = true)
+        if (!n.hasReminder || n.reminderFired || n.inTrash) { cancelAlarm(c, n.id); return }
+        if (n.reminderAt <= now) { fire(c, n.id); return }
         schedule(c, n.id, n.reminderAt)
     }
 
-    private fun schedule(ctx: Context, id: Long, at: Long) {
-        val pi = firePi(ctx, id)
+    private fun schedule(ctx: Context, id: Long, at: Long, snooze: Boolean = false) {
+        val pi = firePi(ctx, id, snooze)
         try {
             if (canExact(ctx)) am(ctx).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
             else am(ctx).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
@@ -57,10 +64,11 @@ object Reminders {
         }
     }
 
-    private fun cancelAlarm(ctx: Context, id: Long) = am(ctx).cancel(firePi(ctx, id))
+    private fun cancelAlarm(ctx: Context, id: Long, snooze: Boolean = false) = am(ctx).cancel(firePi(ctx, id, snooze))
 
     fun cancel(ctx: Context, id: Long) {
         cancelAlarm(ctx.applicationContext, id)
+        cancelAlarm(ctx.applicationContext, id, snooze = true)
         NotificationManagerCompat.from(ctx).cancel(id.hashCode())
     }
 
@@ -79,11 +87,20 @@ object Reminders {
         }
     }
 
-    /** Show the notification and mark the reminder as fired. */
-    fun fire(ctx: Context, id: Long) {
+    /**
+     * Show the notification. One-off: mark fired. Repeating: advance to the next occurrence right away
+     * (so Done/Snooze never break the series). Snooze alarms just clear snoozeAt.
+     */
+    fun fire(ctx: Context, id: Long, snooze: Boolean = false) {
         val n = NoteStore.get(ctx, id) ?: return
         if (!n.hasReminder || n.inTrash) return
-        NoteStore.upsert(ctx, n.copy(reminderFired = true), touch = false)
+        val now = System.currentTimeMillis()
+        val updated = when {
+            snooze -> n.copy(snoozeAt = 0L)
+            n.repeat.isRepeating -> n.copy(reminderAt = n.repeat.next(n.reminderAt, now), reminderFired = false)
+            else -> n.copy(reminderFired = true)
+        }
+        NoteStore.upsert(ctx, updated, touch = false)
         if (!canNotify(ctx)) return
         ensureChannel(ctx)
         val open = PendingIntent.getActivity(ctx, id.hashCode(),
@@ -121,16 +138,19 @@ class ReminderReceiver : BroadcastReceiver() {
         Thread {
             try {
                 when (intent.action) {
-                    Reminders.ACTION_FIRE -> Reminders.fire(context, id)
+                    Reminders.ACTION_FIRE -> Reminders.fire(context, id, intent.getBooleanExtra(Reminders.EXTRA_SNOOZE, false))
                     Reminders.ACTION_DONE -> {
                         NotificationManagerCompat.from(context).cancel(id.hashCode())
-                        NoteStore.update(context, id) { it.copy(reminderAt = 0L, reminderFired = false) }
+                        NoteStore.update(context, id) {
+                            // Repeating: series already advanced on fire; just drop any snooze.
+                            if (it.repeat.isRepeating) it.copy(snoozeAt = 0L)
+                            else it.copy(reminderAt = 0L, reminderFired = false, snoozeAt = 0L)
+                        }
+                        Levels.award(context)
                     }
                     Reminders.ACTION_SNOOZE -> {
                         NotificationManagerCompat.from(context).cancel(id.hashCode())
-                        NoteStore.update(context, id) {
-                            it.copy(reminderAt = System.currentTimeMillis() + Reminders.SNOOZE_MS, reminderFired = false)
-                        }
+                        NoteStore.update(context, id) { it.copy(snoozeAt = System.currentTimeMillis() + Reminders.SNOOZE_MS) }
                     }
                 }
             } finally { pending.finish() }

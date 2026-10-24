@@ -72,3 +72,17 @@ class VolumeKeyDictation(private val context: Context, private val onTrigger: ()
         return true
     }
 }
+
+/** What the mic button, widget mic and volume-key trigger do. */
+enum class VoiceAction(val label: String) {
+    DICTATE("Dictate text (speech to text)"),
+    MEMO("Record a voice memo"),
+    BOTH("Record a voice memo and transcribe it (offline)");
+
+    companion object {
+        fun get(ctx: Context): VoiceAction = runCatching {
+            valueOf(ctx.getSharedPreferences("settings", 0).getString("voice_action", null) ?: DICTATE.name)
+        }.getOrDefault(DICTATE)
+        fun set(ctx: Context, v: VoiceAction) = ctx.getSharedPreferences("settings", 0).edit().putString("voice_action", v.name).apply()
+    }
+}

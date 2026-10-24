@@ -2,6 +2,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/action_mic" android:title="@string/dictate" android:icon="@drawable/ic_mic"
         app:showAsAction="always" />
+    <item android:id="@+id/action_attach" android:title="@string/attach" android:icon="@drawable/ic_attach"
+        app:showAsAction="ifRoom" />
     <item android:id="@+id/action_reminder" android:title="@string/reminder" android:icon="@drawable/ic_bell"
         app:showAsAction="ifRoom" />
     <item android:id="@+id/action_pin" android:title="@string/pin" android:icon="@drawable/ic_pin"

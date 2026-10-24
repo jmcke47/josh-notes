@@ -37,7 +37,8 @@ class NotesWidgetProvider : AppWidgetProvider() {
 
         @Suppress("DEPRECATION")
         fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
-            val views = RemoteViews(context.packageName, R.layout.widget_notes)
+            val views = RemoteViews(context.packageName,
+                if (com.josh.notes.AppSettings.oldSchool(context)) R.layout.widget_notes_os else R.layout.widget_notes)
 
             val serviceIntent = Intent(context, NotesWidgetService::class.java).apply {
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)

@@ -48,6 +48,81 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/dynamic_color" />
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/level_ups"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Old School: show &quot;level up&quot; when a checklist or reminder is done" />
+            <TextView
+                android:id="@+id/font_credit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Old School theme uses the Pixelify Sans font (SIL Open Font License 1.1). Tap for licence."
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                style="@style/SettingsHeader"
+                android:layout_marginTop="24dp"
+                android:text="@string/backup_title" />
+            <TextView
+                android:id="@+id/backup_folder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <TextView
+                android:id="@+id/backup_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/backup_auto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/backup_auto" />
+            <LinearLayout
+                android:id="@+id/backup_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/backup_choose"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/backup_choose" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/backup_now"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/backup_now" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/backup_restore"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/backup_restore" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/backup_help"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                style="@style/SettingsHeader"
+                android:layout_marginTop="24dp"
+                android:text="@string/voice_action_title" />
+            <RadioGroup
+                android:id="@+id/voice_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
             <TextView
                 style="@style/SettingsHeader"
