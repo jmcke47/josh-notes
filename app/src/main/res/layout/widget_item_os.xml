@@ -26,33 +26,27 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal">
-            <TextView
-                android:id="@+id/widget_item_title"
+            <ImageView
+                android:id="@+id/widget_item_title_img"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif-condensed"
-                android:maxLines="1"
-                android:textColor="@color/os_ink"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:importantForAccessibility="no"
+                android:scaleType="fitStart" />
             <ImageView android:id="@+id/widget_item_clip" android:layout_width="13dp" android:layout_height="13dp" android:layout_marginStart="3dp"
                 android:importantForAccessibility="no" android:src="@drawable/ic_attach_widget_os" />
             <ImageView android:id="@+id/widget_item_bell" android:layout_width="13dp" android:layout_height="13dp" android:layout_marginStart="3dp"
                 android:importantForAccessibility="no" android:src="@drawable/ic_bell_widget_os" />
             <ImageView android:id="@+id/widget_item_pin" android:layout_width="13dp" android:layout_height="13dp" android:layout_marginStart="3dp"
-                android:importantForAccessibility="no" android:src="@drawable/ic_pin_small" />
+                android:importantForAccessibility="no" android:src="@drawable/ic_pin_small_os" />
         </LinearLayout>
-        <TextView
-            android:id="@+id/widget_item_body"
+        <ImageView
+            android:id="@+id/widget_item_body_img"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:fontFamily="sans-serif-condensed"
-            android:maxLines="2"
-            android:textColor="@color/os_chat_blue"
-            android:textSize="12sp" />
+            android:layout_marginTop="2dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitStart" />
     </LinearLayout>
     <FrameLayout
         android:id="@+id/widget_item_hitsplat"

@@ -20,7 +20,9 @@ class NotesWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, newOptions: Bundle) {
+        WidgetTheme.saveWidth(context, id, newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH))
         updateWidget(context, manager, id)
+        @Suppress("DEPRECATION") manager.notifyAppWidgetViewDataChanged(intArrayOf(id), R.id.widget_list)
     }
 
     companion object {
@@ -35,16 +37,31 @@ class NotesWidgetProvider : AppWidgetProvider() {
             manager.notifyAppWidgetViewDataChanged(ids, R.id.widget_list)
         }
 
-        @Suppress("DEPRECATION")
         fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
-            val views = RemoteViews(context.packageName,
-                if (com.josh.notes.AppSettings.oldSchool(context)) R.layout.widget_notes_os else R.layout.widget_notes)
+            manager.updateAppWidget(widgetId, buildViews(context, widgetId))
+        }
 
-            val serviceIntent = Intent(context, NotesWidgetService::class.java).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-                data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+        /** The header RemoteViews in the app's current theme. [withList] = false for previews/tests. */
+        @Suppress("DEPRECATION")
+        fun buildViews(context: Context, widgetId: Int, withList: Boolean = true): RemoteViews {
+            val theme = WidgetTheme.of(context)
+            val views = RemoteViews(context.packageName, theme.header)
+            if (theme == WidgetTheme.OLDSCHOOL) {
+                val dm = context.resources.displayMetrics
+                val maxW = ((WidgetTheme.widthDp(context, widgetId) - 110) * dm.density).toInt()
+                PixelText.render(context, context.getString(R.string.app_name), 20f, context.getColor(R.color.os_orange), maxW)
+                    ?.let { views.setImageViewBitmap(R.id.widget_title, it) }
             }
-            views.setRemoteAdapter(R.id.widget_list, serviceIntent)
+
+            if (withList) {
+                val serviceIntent = Intent(context, NotesWidgetService::class.java).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+                    // Theme in the data URI so the launcher re-binds a fresh factory/view cache when the theme changes.
+                    putExtra("theme", theme.name)
+                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+                }
+                views.setRemoteAdapter(R.id.widget_list, serviceIntent)
+            }
             views.setEmptyView(R.id.widget_list, R.id.widget_empty)
 
             // Item tap -> open that note (fill-in intent supplies the note id).
@@ -83,7 +100,7 @@ class NotesWidgetProvider : AppWidgetProvider() {
                     Intent(context, EditNoteActivity::class.java).setAction("com.josh.notes.NEW_NOTE_EMPTY"), immutable)
             )
 
-            manager.updateAppWidget(widgetId, views)
+            return views
         }
     }
 }

@@ -106,9 +106,15 @@ class ScreenshotTest {
         snapView(d.window!!.decorView, "08-dialog")
     }
 
-    @Test fun widget() {
+    private fun renderWidget(theme: String, name: String) {
+        ctx.getSharedPreferences("settings", 0).edit().putString("theme", theme).commit()
         val c = android.view.ContextThemeWrapper(ctx, R.style.Theme_JoshNotes)
-        val root = android.view.LayoutInflater.from(c).inflate(R.layout.widget_notes_os, null) as android.view.ViewGroup
+        val dm = ctx.resources.displayMetrics
+        val w = (300 * dm.density).toInt(); val h = (380 * dm.density).toInt()
+        val frame = android.widget.FrameLayout(c).apply { setBackgroundColor(0xFF5C7F9E.toInt()); setPadding(40, 40, 40, 40) }
+        // Same RemoteViews the launcher gets (list adapter attached manually: no launcher host here).
+        val root = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, 0, withList = false).apply(c, frame)
+        frame.addView(root, android.widget.FrameLayout.LayoutParams(w, h))
         val list = root.findViewById<android.widget.ListView>(R.id.widget_list)
         val f = com.josh.notes.widget.NotesWidgetService.Factory(ctx).apply { onDataSetChanged() }
         root.findViewById<View>(R.id.widget_empty).visibility = View.GONE
@@ -118,12 +124,16 @@ class ScreenshotTest {
             override fun getItemId(p: Int) = p.toLong()
             override fun getView(p: Int, cv: View?, parent: android.view.ViewGroup) = f.getViewAt(p).apply(c, parent)
         }
-        val dm = ctx.resources.displayMetrics
-        val w = (340 * dm.density).toInt(); val h = (420 * dm.density).toInt()
-        val frame = android.widget.FrameLayout(c).apply { setBackgroundResource(R.drawable.os_stone_bg); setPadding(40, 40, 40, 40); addView(root) }
         frame.measure(View.MeasureSpec.makeMeasureSpec(w + 80, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h + 80, View.MeasureSpec.EXACTLY))
         frame.layout(0, 0, w + 80, h + 80)
-        snapView(frame, "04-widget")
+        snapView(frame, name)
+    }
+
+    @Test fun widget() {
+        renderWidget("OLDSCHOOL", "04-widget")
+        renderWidget("OLDSCHOOL", "10-widget-oldschool")
+        renderWidget("DARK", "11-widget-dark")
+        renderWidget("LIGHT", "12-widget-light")
     }
 
     @Test fun editorText() {

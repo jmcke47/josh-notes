@@ -244,7 +244,6 @@ class SettingsActivity : LockableActivity() {
                 setOnClickListener {
                     if (switchingTheme || AppSettings.theme(this@SettingsActivity) == t) return@setOnClickListener
                     switchingTheme = true
-                    com.josh.notes.widget.NotesWidgetProvider.refreshAll(this@SettingsActivity.applicationContext)
                     AppSettings.switchTheme(this@SettingsActivity, t)
                 }
             })

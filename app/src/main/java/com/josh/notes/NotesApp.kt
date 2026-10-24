@@ -36,6 +36,8 @@ object AppSettings {
     fun switchTheme(a: android.app.Activity, t: ThemeMode) {
         if (theme(a) == t) return
         setTheme(a, t)
+        // Home-screen widgets follow the app theme: rebuild them now (after the pref is saved).
+        runCatching { com.josh.notes.widget.NotesWidgetProvider.refreshAll(a.applicationContext) }
         val currentNight = isNight(a.resources.configuration.uiMode)
         val targetNight = when (t.night) {
             AppCompatDelegate.MODE_NIGHT_YES -> true
@@ -77,6 +79,13 @@ class NotesApp : Application() {
         // Re-arm reminders (covers app updates and force-stops); cheap, runs off the main thread.
         Thread { runCatching { Reminders.rescheduleAll(this) }; runCatching { Attachments.cleanupOrphans(this, NoteStore.all(this)) } }.start()
         runCatching { Backup.schedule(this) }
+        // After an app update or a theme change made elsewhere, make sure widgets match the current theme.
+        val sig = AppSettings.theme(this).name + "|" + BuildConfig.VERSION_CODE
+        val wp = getSharedPreferences("widget", 0)
+        if (wp.getString("rendered", null) != sig) {
+            runCatching { com.josh.notes.widget.NotesWidgetProvider.refreshAll(this) }
+            wp.edit().putString("rendered", sig).apply()
+        }
         DynamicColors.applyToActivitiesIfAvailable(this,
             DynamicColorsOptions.Builder().setPrecondition { a, _ -> AppSettings.dynamicColor(a) }.build())
     }

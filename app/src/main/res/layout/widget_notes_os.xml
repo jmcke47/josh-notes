@@ -12,21 +12,14 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal">
-        <TextView
+        <ImageView
             android:id="@+id/widget_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:contentDescription="@string/app_name"
             android:paddingHorizontal="6dp"
-            android:text="@string/app_name"
-            android:textColor="@color/os_orange"
-            android:fontFamily="sans-serif-condensed"
-            android:shadowColor="#FF000000"
-            android:shadowDx="2"
-            android:shadowDy="2"
-            android:shadowRadius="0.01"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:scaleType="fitStart" />
         <ImageView
             android:id="@+id/widget_mic"
             android:layout_width="36dp"
