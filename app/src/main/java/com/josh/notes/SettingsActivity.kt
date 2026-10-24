@@ -18,7 +18,7 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.io.File
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : LockableActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -29,6 +29,22 @@ class SettingsActivity : AppCompatActivity() {
             WindowInsetsCompat.CONSUMED
         }
         findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
+
+        // App lock
+        findViewById<MaterialSwitch>(R.id.app_lock).apply {
+            isChecked = AppLock.enabled(this@SettingsActivity)
+            if (!AppLock.available(this@SettingsActivity) && !isChecked) {
+                isEnabled = false
+                findViewById<android.widget.TextView>(R.id.app_lock_desc).text =
+                    "Set up a screen lock (PIN, pattern or fingerprint) on this phone to use App lock."
+            }
+            setOnCheckedChangeListener { sw, on ->
+                // Confirm identity both to turn on and to turn off.
+                AppLock.prompt(this@SettingsActivity, if (on) "Turn on App lock" else "Turn off App lock",
+                    onSuccess = { AppLock.setEnabled(this@SettingsActivity, on) },
+                    onFail = { sw.setOnCheckedChangeListener(null); sw.isChecked = !on; recreate() })
+            }
+        }
 
         // Theme
         val themeGroup = findViewById<RadioGroup>(R.id.theme_group)

@@ -31,11 +31,11 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : LockableActivity() {
 
     companion object { @JvmStatic var themeChanged = false }
 
-    private val adapter = NotesAdapter { openNote(it.id) }
+    private val adapter = NotesAdapter { if (mode == Mode.TRASH) trashActions(it) else openNote(it.id) }
     private lateinit var empty: TextView
     private lateinit var toolbar: MaterialToolbar
     private lateinit var root: View
@@ -43,10 +43,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var updateController: UpdateController
     private val prefs by lazy { getSharedPreferences("ui", MODE_PRIVATE) }
     private val io = Executors.newSingleThreadExecutor()
-    private val volumeKeys by lazy { VolumeKeyDictation(this) { openNote(null, dictate = true) } }
+    private val volumeKeys by lazy { VolumeKeyDictation(this) { if (!AppLock.needsUnlock(this)) openNote(null, dictate = true) } }
 
     private var searchQuery = ""
-    private var showArchive = false
+    private enum class Mode { NOTES, ARCHIVE, TRASH }
+    private var mode = Mode.NOTES
     private var sortMode: SortMode
         get() = runCatching { SortMode.valueOf(prefs.getString("sort", null) ?: "EDITED") }.getOrDefault(SortMode.EDITED)
         set(v) = prefs.edit { putString("sort", v.name) }
@@ -88,7 +89,7 @@ class MainActivity : AppCompatActivity() {
             v.updatePadding(left = b.left, top = b.top, right = b.right, bottom = b.bottom)
             WindowInsetsCompat.CONSUMED
         }
-        showArchive = savedInstanceState?.getBoolean("archive") ?: false
+        mode = runCatching { Mode.valueOf(savedInstanceState?.getString("mode") ?: "NOTES") }.getOrDefault(Mode.NOTES)
 
         updateController = UpdateController(this)
         toolbar = findViewById(R.id.toolbar)
@@ -105,7 +106,7 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (showArchive) setArchiveMode(false) else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+                if (mode != Mode.NOTES) setMode(Mode.NOTES) else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
             }
         })
         applyMode()
@@ -120,7 +121,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBoolean("archive", showArchive)
+        outState.putString("mode", mode.name)
     }
 
     override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent) =
@@ -129,6 +130,8 @@ class MainActivity : AppCompatActivity() {
         volumeKeys.onKeyLongPress(keyCode) || super.onKeyLongPress(keyCode, event)
     override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent) =
         volumeKeys.onKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
+
+    override fun onUnlocked() = refresh()
 
     override fun onResume() {
         super.onResume()
@@ -158,7 +161,9 @@ class MainActivity : AppCompatActivity() {
                 R.id.sort_edited -> setSort(SortMode.EDITED)
                 R.id.sort_created -> setSort(SortMode.CREATED)
                 R.id.sort_title -> setSort(SortMode.TITLE)
-                R.id.action_archive_view -> setArchiveMode(!showArchive)
+                R.id.action_archive_view -> setMode(if (mode == Mode.ARCHIVE) Mode.NOTES else Mode.ARCHIVE)
+                R.id.action_trash_view -> setMode(if (mode == Mode.TRASH) Mode.NOTES else Mode.TRASH)
+                R.id.action_empty_trash -> confirmEmptyTrash()
                 R.id.action_export -> exportLauncher.launch("josh-notes-backup-" +
                         SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date()) + ".json")
                 R.id.action_import -> importLauncher.launch(arrayOf("application/json", "text/*", "application/octet-stream"))
@@ -178,26 +183,47 @@ class MainActivity : AppCompatActivity() {
         toolbar.menu.findItem(id)?.isChecked = true
     }
 
-    private fun setArchiveMode(on: Boolean) { showArchive = on; applyMode(); refresh() }
+    private fun setMode(m: Mode) { mode = m; applyMode(); refresh() }
+
+    private fun confirmEmptyTrash() {
+        MaterialAlertDialogBuilder(this).setTitle("Empty Recently deleted?")
+            .setMessage("All notes in Recently deleted will be permanently deleted.")
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton("Delete forever") { _, _ -> val n = NoteStore.emptyTrash(this); refresh(); snack("Deleted $n notes forever") }
+            .show()
+    }
+
+    private fun trashActions(n: Note) {
+        val daysLeft = (NoteStore.TRASH_DAYS - (System.currentTimeMillis() - n.deletedAt) / 86_400_000L).coerceAtLeast(0)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(n.displayTitle.ifBlank { getString(R.string.untitled) })
+            .setMessage(n.contentText.take(500).ifBlank { "(empty)" } + "\n\nPermanently deleted in $daysLeft days.")
+            .setNeutralButton("Delete forever") { _, _ -> NoteStore.deleteForever(this, n.id); refresh() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton("Restore") { _, _ -> NoteStore.untrash(this, n.id); refresh(); snack("Note restored") }
+            .show()
+    }
 
     private fun applyMode() {
-        toolbar.title = getString(if (showArchive) R.string.archive_title else R.string.app_name)
-        toolbar.menu.findItem(R.id.action_archive_view)?.title = getString(if (showArchive) R.string.show_notes else R.string.show_archive)
-        if (showArchive) fab.hide() else fab.show()
-        if (showArchive) {
+        toolbar.title = getString(when (mode) { Mode.ARCHIVE -> R.string.archive_title; Mode.TRASH -> R.string.trash_title; else -> R.string.app_name })
+        toolbar.menu.findItem(R.id.action_archive_view)?.title = getString(if (mode == Mode.ARCHIVE) R.string.show_notes else R.string.show_archive)
+        toolbar.menu.findItem(R.id.action_trash_view)?.title = getString(if (mode == Mode.TRASH) R.string.show_notes else R.string.show_trash)
+        toolbar.menu.findItem(R.id.action_empty_trash)?.isVisible = mode == Mode.TRASH
+        if (mode != Mode.NOTES) fab.hide() else fab.show()
+        if (mode != Mode.NOTES) {
             toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
-            toolbar.setNavigationOnClickListener { setArchiveMode(false) }
+            toolbar.setNavigationOnClickListener { setMode(Mode.NOTES) }
         } else toolbar.navigationIcon = null
     }
 
     private fun refresh() {
         val q = searchQuery.trim().lowercase()
         val notes = NoteStore.all(this)
-            .filter { it.archived == showArchive }
+            .filter { when (mode) { Mode.TRASH -> it.inTrash; Mode.ARCHIVE -> !it.inTrash && it.archived; Mode.NOTES -> !it.inTrash && !it.archived } }
             .filter { q.isEmpty() || it.title.lowercase().contains(q) || it.contentText.lowercase().contains(q) }
-            .sortedFor(sortMode)
+            .let { if (mode == Mode.TRASH) it.sortedByDescending { n -> n.deletedAt } else it.sortedFor(sortMode) }
         adapter.submit(notes)
-        empty.setText(when { q.isNotEmpty() -> R.string.empty_search; showArchive -> R.string.empty_archive; else -> R.string.empty_notes })
+        empty.setText(when { q.isNotEmpty() -> R.string.empty_search; mode == Mode.ARCHIVE -> R.string.empty_archive; mode == Mode.TRASH -> R.string.empty_trash; else -> R.string.empty_notes })
         empty.visibility = if (notes.isEmpty()) View.VISIBLE else View.GONE
     }
 
@@ -227,9 +253,10 @@ class MainActivity : AppCompatActivity() {
         override fun onMove(rv: RecyclerView, vh: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
         override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) {
             val note = adapter.itemAt(vh.bindingAdapterPosition) ?: return refresh()
+            if (mode == Mode.TRASH) { NoteStore.deleteForever(this@MainActivity, note.id); refresh(); return }
             NoteStore.delete(this@MainActivity, note.id)
             refresh()
-            Snackbar.make(root, R.string.note_deleted, Snackbar.LENGTH_LONG)
+            Snackbar.make(root, R.string.note_moved_to_trash, Snackbar.LENGTH_LONG)
                 .setAnchorView(fab.takeIf { it.isShown })
                 .setAction(R.string.undo) { NoteStore.restore(this@MainActivity, note); refresh() }
                 .show()
@@ -257,6 +284,7 @@ class MainActivity : AppCompatActivity() {
             val body: TextView = v.findViewById(R.id.body)
             val date: TextView = v.findViewById(R.id.date)
             val pin: ImageView = v.findViewById(R.id.pin)
+            val bell: ImageView = v.findViewById(R.id.bell)
             val strip: View = v.findViewById(R.id.color_strip)
         }
 
@@ -282,6 +310,8 @@ class MainActivity : AppCompatActivity() {
             h.date.text = DateUtils.getRelativeTimeSpanString(n.updatedAt).toString() +
                     if (n.checklist && n.items.isNotEmpty()) "  ·  $done/${n.items.size} done" else ""
             h.pin.visibility = if (n.pinned) View.VISIBLE else View.GONE
+            h.bell.visibility = if (n.hasReminder && !n.inTrash) View.VISIBLE else View.GONE
+            if (n.hasReminder) h.date.text = "${h.date.text}  ·  ⏰ " + ReminderFormat.short(ctx, n.reminderAt)
             val color = NoteColors.palette[n.color]
             h.strip.visibility = if (n.color == 0) View.GONE else View.VISIBLE
             h.strip.setBackgroundColor(color)

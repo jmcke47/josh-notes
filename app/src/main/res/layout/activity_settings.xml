@@ -21,6 +21,23 @@
             android:padding="20dp">
             <TextView
                 style="@style/SettingsHeader"
+                android:text="@string/privacy" />
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/app_lock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/app_lock" />
+            <TextView
+                android:id="@+id/app_lock_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:text="@string/app_lock_desc"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                style="@style/SettingsHeader"
                 android:text="@string/theme" />
             <RadioGroup
                 android:id="@+id/theme_group"

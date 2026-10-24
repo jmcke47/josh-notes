@@ -36,6 +36,13 @@
                 android:textSize="14sp"
                 android:textStyle="bold" />
             <ImageView
+                android:id="@+id/widget_item_bell"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="4dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_bell_widget" />
+            <ImageView
                 android:id="@+id/widget_item_pin"
                 android:layout_width="14dp"
                 android:layout_height="14dp"

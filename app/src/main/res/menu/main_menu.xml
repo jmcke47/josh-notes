@@ -15,6 +15,8 @@
         </menu>
     </item>
     <item android:id="@+id/action_archive_view" android:title="@string/show_archive" app:showAsAction="never" />
+    <item android:id="@+id/action_trash_view" android:title="@string/show_trash" app:showAsAction="never" />
+    <item android:id="@+id/action_empty_trash" android:title="@string/empty_trash_action" android:visible="false" app:showAsAction="never" />
     <item android:id="@+id/action_export" android:title="@string/export_backup" app:showAsAction="never" />
     <item android:id="@+id/action_import" android:title="@string/import_backup" app:showAsAction="never" />
     <item android:id="@+id/action_settings" android:title="@string/settings" app:showAsAction="never" />

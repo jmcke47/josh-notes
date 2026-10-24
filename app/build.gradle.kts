@@ -72,6 +72,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("com.google.android.material:material:1.14.0")
     implementation("com.alphacephei:vosk-android:0.3.75")
+    implementation("androidx.biometric:biometric:1.1.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20250517")
     implementation("net.java.dev.jna:jna:5.18.1@aar")

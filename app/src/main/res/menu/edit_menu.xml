@@ -2,10 +2,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/action_mic" android:title="@string/dictate" android:icon="@drawable/ic_mic"
         app:showAsAction="always" />
+    <item android:id="@+id/action_reminder" android:title="@string/reminder" android:icon="@drawable/ic_bell"
+        app:showAsAction="ifRoom" />
     <item android:id="@+id/action_pin" android:title="@string/pin" android:icon="@drawable/ic_pin"
         app:showAsAction="always" />
     <item android:id="@+id/action_color" android:title="@string/colour" android:icon="@drawable/ic_palette"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
     <item android:id="@+id/action_checklist" android:title="@string/to_checklist" android:icon="@drawable/ic_checklist"
         app:showAsAction="never" />
     <item android:id="@+id/action_share" android:title="@string/share" android:icon="@drawable/ic_share"

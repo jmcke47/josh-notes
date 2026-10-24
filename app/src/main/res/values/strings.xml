@@ -45,4 +45,16 @@
     <string name="delete_model">Delete offline voice model</string>
     <string name="share_to_label">New Josh note</string>
     <string name="advanced">Advanced</string>
+    <string name="show_trash">Recently deleted</string>
+    <string name="trash_title">Recently deleted</string>
+    <string name="empty_trash">Nothing here. Deleted notes stay for 30 days.</string>
+    <string name="empty_trash_action">Empty Recently deleted</string>
+    <string name="note_moved_to_trash">Moved to Recently deleted</string>
+    <string name="locked_title">Josh Notes is locked</string>
+    <string name="unlock">Unlock</string>
+    <string name="reminder">Reminder</string>
+    <string name="app_lock">App lock</string>
+    <string name="app_lock_desc">Require fingerprint, face or screen lock to open. Widget shows titles only.</string>
+    <string name="tap_to_edit">Tap text to edit</string>
+    <string name="privacy">Privacy</string>
 </resources>

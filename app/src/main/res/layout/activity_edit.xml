@@ -31,6 +31,16 @@
         android:paddingVertical="8dp"
         android:textAppearance="?attr/textAppearanceHeadlineSmall" />
 
+    <com.google.android.material.chip.Chip
+        android:id="@+id/reminder_chip"
+        style="@style/Widget.Material3.Chip.Input"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:visibility="gone"
+        app:chipIcon="@drawable/ic_bell"
+        app:chipIconVisible="true" />
+
     <ScrollView
         android:id="@+id/scroll"
         android:layout_width="match_parent"
@@ -41,6 +51,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+            <TextView
+                android:id="@+id/body_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autoLink="web|phone|email"
+                android:linksClickable="true"
+                android:minHeight="300dp"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="8dp"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textIsSelectable="false"
+                android:visibility="gone" />
             <EditText
                 android:id="@+id/body"
                 android:layout_width="match_parent"
@@ -72,4 +94,13 @@
                 app:icon="@drawable/ic_add" />
         </LinearLayout>
     </ScrollView>
+
+    <TextView
+        android:id="@+id/footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="6dp"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOutline" />
 </LinearLayout>

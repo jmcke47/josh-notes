@@ -16,7 +16,13 @@ data class Note(
     val archived: Boolean = false,
     val checklist: Boolean = false,
     val items: List<CheckItem> = emptyList(),
+    val reminderAt: Long = 0L,       // epoch ms, 0 = no reminder
+    val reminderFired: Boolean = false,
+    val deletedAt: Long = 0L,        // epoch ms, 0 = not in trash
 ) {
+    val inTrash: Boolean get() = deletedAt > 0
+    val hasReminder: Boolean get() = reminderAt > 0
+
     val displayTitle: String
         get() = title.ifBlank {
             (if (checklist) items.firstOrNull { it.text.isNotBlank() }?.text
@@ -37,6 +43,7 @@ data class Note(
         .put("createdAt", createdAt).put("updatedAt", updatedAt)
         .put("pinned", pinned).put("color", color).put("archived", archived)
         .put("checklist", checklist)
+        .put("reminderAt", reminderAt).put("reminderFired", reminderFired).put("deletedAt", deletedAt)
         .put("items", JSONArray().apply {
             items.forEach { put(JSONObject().put("text", it.text).put("checked", it.checked)) }
         })
@@ -64,6 +71,9 @@ data class Note(
                 archived = o.optBoolean("archived"),
                 checklist = o.optBoolean("checklist"),
                 items = items,
+                reminderAt = o.optLong("reminderAt", 0L).coerceAtLeast(0L),
+                reminderFired = o.optBoolean("reminderFired"),
+                deletedAt = o.optLong("deletedAt", 0L).coerceAtLeast(0L),
             )
         }
     }

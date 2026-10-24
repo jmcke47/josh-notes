@@ -66,6 +66,9 @@ object NoteStore {
             }
         }
         cache = list
+        // Permanently remove notes that have been in the trash for > 30 days.
+        val cutoff = System.currentTimeMillis() - TRASH_MS
+        if (!loadFailed && list.removeAll { it.inTrash && it.deletedAt < cutoff }) persist(ctx, list)
         return list
     }
 
@@ -77,6 +80,9 @@ object NoteStore {
         if (!tmp.renameTo(f)) { f.writeText(data); tmp.delete() }
         loadFailed = false
     }
+
+    const val TRASH_DAYS = 30
+    private const val TRASH_MS = TRASH_DAYS * 24L * 3600_000L
 
     private fun changed(ctx: Context) = NotesWidgetProvider.refreshAll(ctx)
 
@@ -103,6 +109,7 @@ object NoteStore {
             persist(ctx, list)
             n
         }
+        Reminders.sync(ctx, saved)
         changed(ctx)
         return saved
     }
@@ -113,14 +120,32 @@ object NoteStore {
         return upsert(ctx, f(n), touch)
     }
 
+    /** Move to trash (kept $TRASH_DAYS days). Returns the note as it was before, for Undo. */
     fun delete(ctx: Context, id: Long): Note? {
+        val before = get(ctx, id) ?: return null
+        upsert(ctx, before.copy(deletedAt = System.currentTimeMillis()), touch = false)
+        return before
+    }
+
+    /** Restore from trash. */
+    fun untrash(ctx: Context, id: Long) = update(ctx, id) { it.copy(deletedAt = 0L) }
+
+    /** Permanently delete. */
+    fun deleteForever(ctx: Context, id: Long): Note? {
         val removed = synchronized(lock) {
             val list = load(ctx)
             val idx = list.indexOfFirst { it.id == id }
             if (idx < 0) null else list.removeAt(idx).also { persist(ctx, list) }
         }
+        removed?.let { Reminders.cancel(ctx, it.id) }
         changed(ctx)
         return removed
+    }
+
+    fun emptyTrash(ctx: Context): Int {
+        val ids = all(ctx).filter { it.inTrash }.map { it.id }
+        ids.forEach { deleteForever(ctx, it) }
+        return ids.size
     }
 
     /** Put a previously deleted note back exactly as it was (Undo). */

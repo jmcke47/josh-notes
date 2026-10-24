@@ -22,7 +22,7 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 
-class EditNoteActivity : AppCompatActivity() {
+class EditNoteActivity : LockableActivity() {
 
     companion object {
         const val EXTRA_NOTE_ID = "note_id"
@@ -39,6 +39,10 @@ class EditNoteActivity : AppCompatActivity() {
     private var archived = false
     private var checklist = false
     private var createdAt = 0L
+    private var reminderAt = 0L
+    private var reminderFired = false
+    private var lastEdited = 0L
+    private var viewMode = false
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var titleEt: EditText
@@ -46,9 +50,17 @@ class EditNoteActivity : AppCompatActivity() {
     private lateinit var listBox: LinearLayout
     private lateinit var addItem: View
     private lateinit var colorBar: View
+    private lateinit var bodyView: android.widget.TextView
+    private lateinit var footer: android.widget.TextView
+    private lateinit var reminderChip: com.google.android.material.chip.Chip
+    private var pendingReminder = false
+    private val notifPermission = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
+        if (!ok) Snackbar.make(toolbar, "Notifications are off — the reminder won't show. Enable them in Settings.", Snackbar.LENGTH_LONG).show()
+        if (pendingReminder) { pendingReminder = false; pickReminderDate() }
+    }
     private var lastFocused: EditText? = null
     private lateinit var dictation: DictationController
-    private val volumeKeys by lazy { VolumeKeyDictation(this) { dictation.start() } }
+    private val volumeKeys by lazy { VolumeKeyDictation(this) { if (!AppLock.needsUnlock(this)) dictation.start() } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -66,6 +78,25 @@ class EditNoteActivity : AppCompatActivity() {
         listBox = findViewById(R.id.checklist)
         addItem = findViewById(R.id.add_item)
         colorBar = findViewById(R.id.color_bar)
+        bodyView = findViewById(R.id.body_view)
+        footer = findViewById(R.id.footer)
+        reminderChip = findViewById(R.id.reminder_chip)
+        reminderChip.setOnClickListener { setReminder() }
+        reminderChip.setOnCloseIconClickListener { reminderAt = 0L; reminderFired = false; updateReminderChip() }
+        bodyView.setOnClickListener {
+            // A tap on a link is handled by LinkMovementMethod (it selects the link span) — ignore that one.
+            val t = bodyView.text
+            if (t is android.text.Spannable && android.text.Selection.getSelectionStart(t) != android.text.Selection.getSelectionEnd(t)) {
+                android.text.Selection.removeSelection(t); return@setOnClickListener
+            }
+            enterEdit()
+        }
+        val watcher = object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) = updateFooter()
+        }
+        titleEt.addTextChangedListener(watcher); bodyEt.addTextChangedListener(watcher)
         dictation = DictationController(this) { insertAtCursor(it) }
 
         trackFocus(titleEt); trackFocus(bodyEt)
@@ -81,6 +112,8 @@ class EditNoteActivity : AppCompatActivity() {
             pinned = savedInstanceState.getBoolean("pinned"); color = savedInstanceState.getInt("color")
             archived = savedInstanceState.getBoolean("archived"); checklist = savedInstanceState.getBoolean("checklist")
             createdAt = savedInstanceState.getLong("createdAt")
+            reminderAt = savedInstanceState.getLong("reminderAt"); reminderFired = savedInstanceState.getBoolean("reminderFired")
+            lastEdited = savedInstanceState.getLong("lastEdited")
             val texts = savedInstanceState.getStringArrayList("itemTexts") ?: arrayListOf()
             val checks = savedInstanceState.getBooleanArray("itemChecks") ?: BooleanArray(0)
             setChecklistItems(texts.mapIndexed { i, t -> CheckItem(t, checks.getOrElse(i) { false }) })
@@ -88,6 +121,7 @@ class EditNoteActivity : AppCompatActivity() {
             titleEt.setText(note.title); bodyEt.setText(note.body)
             pinned = note.pinned; color = note.color; archived = note.archived
             checklist = note.checklist; createdAt = note.createdAt
+            reminderAt = note.reminderAt; reminderFired = note.reminderFired; lastEdited = note.updatedAt
             setChecklistItems(note.items)
         } else {
             intent.getStringExtra(EXTRA_TITLE)?.let { titleEt.setText(it) }
@@ -95,12 +129,16 @@ class EditNoteActivity : AppCompatActivity() {
             titleEt.requestFocus()
         }
         applyChecklistMode()
-        updateMenu(); updateColor()
+        updateMenu(); updateColor(); updateReminderChip()
+        val wantsDictation0 = intent.getBooleanExtra(EXTRA_DICTATE, false) || intent.action == ACTION_DICTATE
+        if (savedInstanceState == null && note != null && !note.checklist && note.body.isNotBlank() && !wantsDictation0) enterView()
+        updateFooter()
 
         toolbar.setNavigationOnClickListener { finish() }
         toolbar.setOnMenuItemClickListener {
             when (it.itemId) {
-                R.id.action_mic -> dictation.start()
+                R.id.action_mic -> { if (viewMode) enterEdit(); dictation.start() }
+                R.id.action_reminder -> setReminder()
                 R.id.action_pin -> { pinned = !pinned; updateMenu()
                     Snackbar.make(toolbar, if (pinned) "Pinned" else "Unpinned", Snackbar.LENGTH_SHORT).show() }
                 R.id.action_color -> pickColor()
@@ -117,13 +155,119 @@ class EditNoteActivity : AppCompatActivity() {
                 (intent.getBooleanExtra(EXTRA_DICTATE, false) || intent.action == ACTION_DICTATE)
         if (wantsDictation) {
             (if (checklist) null else bodyEt)?.requestFocus()
-            bodyEt.post { dictation.start() }
+            if (AppLock.needsUnlock(this)) dictateAfterUnlock = true else bodyEt.post { dictation.start() }
         }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent) = volumeKeys.onKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
     override fun onKeyLongPress(keyCode: Int, event: KeyEvent) = volumeKeys.onKeyLongPress(keyCode) || super.onKeyLongPress(keyCode, event)
     override fun onKeyUp(keyCode: Int, event: KeyEvent) = volumeKeys.onKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
+
+    private var dictateAfterUnlock = false
+    override fun onUnlocked() { if (dictateAfterUnlock) { dictateAfterUnlock = false; bodyEt.post { dictation.start() } } }
+
+    // ---------------------------------------------------------------- view / edit mode (tappable links)
+
+    private fun enterView() {
+        viewMode = true
+        bodyView.text = bodyEt.text.toString()
+        bodyView.visibility = View.VISIBLE; bodyEt.visibility = View.GONE
+    }
+
+    private fun enterEdit() {
+        if (!viewMode) return
+        viewMode = false
+        bodyView.visibility = View.GONE; bodyEt.visibility = View.VISIBLE
+        bodyEt.requestFocus(); bodyEt.setSelection(bodyEt.text.length)
+        getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+            ?.showSoftInput(bodyEt, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    // ---------------------------------------------------------------- footer
+
+    private fun updateFooter() {
+        if (!::footer.isInitialized) return
+        val text = if (checklist) currentItems().joinToString("\n") { it.text } else bodyEt.text.toString()
+        val all = titleEt.text.toString() + "\n" + text
+        val words = Regex("\\S+").findAll(all).count()
+        val chars = text.length + titleEt.text.length
+        val edited = if (lastEdited > 0) "Edited " + android.text.format.DateUtils.getRelativeTimeSpanString(
+            lastEdited, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS) else "New note"
+        footer.text = "$words words · $chars characters · $edited"
+    }
+
+    // ---------------------------------------------------------------- reminders
+
+    private fun updateReminderChip() {
+        reminderChip.visibility = if (reminderAt > 0) View.VISIBLE else View.GONE
+        if (reminderAt > 0) {
+            reminderChip.text = ReminderFormat.short(this, reminderAt) + if (reminderAt <= System.currentTimeMillis()) " · past" else ""
+            reminderChip.isCloseIconVisible = true
+        }
+        toolbar.menu.findItem(R.id.action_reminder)?.icon?.mutate()?.alpha = if (reminderAt > 0) 255 else 110
+    }
+
+    private fun setReminder() {
+        if (!Reminders.canNotify(this) && android.os.Build.VERSION.SDK_INT >= 33) {
+            pendingReminder = true
+            notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+        pickReminderDate()
+    }
+
+    private fun pickReminderDate() {
+        val now = java.util.Calendar.getInstance()
+        val start = if (reminderAt > System.currentTimeMillis()) reminderAt else now.timeInMillis + 3600_000L
+        // MaterialDatePicker works in UTC midnight millis.
+        val local = java.util.Calendar.getInstance().apply { timeInMillis = start }
+        val utc = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+            clear(); set(local.get(java.util.Calendar.YEAR), local.get(java.util.Calendar.MONTH), local.get(java.util.Calendar.DAY_OF_MONTH))
+        }
+        val dp = com.google.android.material.datepicker.MaterialDatePicker.Builder.datePicker()
+            .setTitleText("Remind me on")
+            .setSelection(utc.timeInMillis)
+            .setCalendarConstraints(com.google.android.material.datepicker.CalendarConstraints.Builder()
+                .setValidator(com.google.android.material.datepicker.DateValidatorPointForward.now()).build())
+            .build()
+        dp.addOnPositiveButtonClickListener { sel ->
+            val d = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = sel }
+            val tp = com.google.android.material.timepicker.MaterialTimePicker.Builder()
+                .setTimeFormat(if (android.text.format.DateFormat.is24HourFormat(this))
+                    com.google.android.material.timepicker.TimeFormat.CLOCK_24H else com.google.android.material.timepicker.TimeFormat.CLOCK_12H)
+                .setHour(local.get(java.util.Calendar.HOUR_OF_DAY)).setMinute(local.get(java.util.Calendar.MINUTE))
+                .setTitleText("At")
+                .build()
+            tp.addOnPositiveButtonClickListener {
+                val at = java.util.Calendar.getInstance().apply {
+                    clear()
+                    set(d.get(java.util.Calendar.YEAR), d.get(java.util.Calendar.MONTH), d.get(java.util.Calendar.DAY_OF_MONTH), tp.hour, tp.minute, 0)
+                }.timeInMillis
+                if (at <= System.currentTimeMillis()) {
+                    Snackbar.make(toolbar, "That time has already passed", Snackbar.LENGTH_SHORT).show(); return@addOnPositiveButtonClickListener
+                }
+                reminderAt = at; reminderFired = false
+                updateReminderChip()
+                save() // schedule straight away
+                if (!Reminders.canExact(this)) offerExactAlarms()
+                else Snackbar.make(toolbar, "Reminder set for " + ReminderFormat.short(this, at), Snackbar.LENGTH_SHORT).show()
+            }
+            tp.show(supportFragmentManager, "time")
+        }
+        dp.show(supportFragmentManager, "date")
+    }
+
+    private fun offerExactAlarms() {
+        if (android.os.Build.VERSION.SDK_INT < 31) return
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Allow exact reminders?")
+            .setMessage("Without the \"Alarms & reminders\" permission, Android may deliver reminders a few minutes late.")
+            .setNegativeButton("Not now", null)
+            .setPositiveButton("Open settings") { _, _ ->
+                runCatching { startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                    android.net.Uri.parse("package:$packageName"))) }
+            }.show()
+    }
 
     override fun onDestroy() { dictation.release(); super.onDestroy() }
 
@@ -132,7 +276,14 @@ class EditNoteActivity : AppCompatActivity() {
     }
 
     /** Insert dictated text at the cursor of the last focused field (body / item by default). */
+    private fun EditText.doAfterTextChangedCompat(f: () -> Unit) = addTextChangedListener(object : android.text.TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+        override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+        override fun afterTextChanged(s: android.text.Editable?) = f()
+    })
+
     private fun insertAtCursor(text: String) {
+        if (viewMode) enterEdit()
         val target = lastFocused?.takeIf { it.isAttachedToWindow }
             ?: if (checklist) addRow(CheckItem("", false), focus = true) else bodyEt
         val e = target.text
@@ -162,6 +313,7 @@ class EditNoteActivity : AppCompatActivity() {
         cb.isChecked = item.checked
         strike(et, item.checked)
         cb.setOnCheckedChangeListener { _, c -> strike(et, c) }
+        et.doAfterTextChangedCompat { updateFooter() }
         trackFocus(et)
         et.imeOptions = EditorInfo.IME_ACTION_NEXT
         et.setRawInputType(EditorInfo.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_FLAG_CAP_SENTENCES)
@@ -207,6 +359,7 @@ class EditNoteActivity : AppCompatActivity() {
     }
 
     private fun applyChecklistMode() {
+        if (checklist && viewMode) { viewMode = false; bodyView.visibility = View.GONE }
         bodyEt.visibility = if (checklist) View.GONE else View.VISIBLE
         listBox.visibility = if (checklist) View.VISIBLE else View.GONE
         addItem.visibility = listBox.visibility
@@ -255,6 +408,7 @@ class EditNoteActivity : AppCompatActivity() {
         updatedAt = System.currentTimeMillis(), createdAt = createdAt,
         pinned = pinned, color = color, archived = archived, checklist = checklist,
         items = if (checklist) currentItems() else emptyList(),
+        reminderAt = reminderAt, reminderFired = reminderFired,
     )
 
     private fun share() {
@@ -270,7 +424,7 @@ class EditNoteActivity : AppCompatActivity() {
     private fun confirmDelete() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Delete note?")
-            .setMessage("This can't be undone.")
+            .setMessage("It'll be kept in Recently deleted for 30 days.")
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.delete) { _, _ ->
                 if (noteId != 0L) NoteStore.delete(this, noteId)
@@ -290,14 +444,17 @@ class EditNoteActivity : AppCompatActivity() {
         if (existing != null) {
             val contentSame = existing.title == n.title && existing.body == n.body && existing.items == n.items &&
                     existing.checklist == n.checklist
-            val metaSame = existing.pinned == n.pinned && existing.color == n.color && existing.archived == n.archived
+            val metaSame = existing.pinned == n.pinned && existing.color == n.color && existing.archived == n.archived &&
+                    existing.reminderAt == n.reminderAt && existing.reminderFired == n.reminderFired
             if (contentSame && metaSame) return
             // Only bump "edited" time when the content changed.
-            noteId = NoteStore.upsert(this, n.copy(createdAt = existing.createdAt, updatedAt = existing.updatedAt), touch = !contentSame).id
+            noteId = NoteStore.upsert(this, n.copy(createdAt = existing.createdAt, updatedAt = existing.updatedAt,
+                deletedAt = existing.deletedAt), touch = !contentSame).id
         } else {
             noteId = NoteStore.upsert(this, n.copy(id = 0L)).id
         }
-        createdAt = NoteStore.get(this, noteId)?.createdAt ?: createdAt
+        NoteStore.get(this, noteId)?.let { createdAt = it.createdAt; lastEdited = it.updatedAt }
+        updateFooter()
     }
 
     override fun onPause() {
@@ -311,6 +468,8 @@ class EditNoteActivity : AppCompatActivity() {
         outState.putBoolean("pinned", pinned); outState.putInt("color", color)
         outState.putBoolean("archived", archived); outState.putBoolean("checklist", checklist)
         outState.putLong("createdAt", createdAt)
+        outState.putLong("reminderAt", reminderAt); outState.putBoolean("reminderFired", reminderFired)
+        outState.putLong("lastEdited", lastEdited)
         val items = currentItems()
         outState.putStringArrayList("itemTexts", ArrayList(items.map { it.text }))
         outState.putBooleanArray("itemChecks", items.map { it.checked }.toBooleanArray())

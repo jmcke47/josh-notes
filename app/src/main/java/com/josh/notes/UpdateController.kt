@@ -194,7 +194,7 @@ class UpdateController(private val activity: AppCompatActivity) {
     private fun details(t: Throwable): String {
         val root = generateSequence(t) { it.cause }.last()
         val chain = if (root !== t) " ← ${root.javaClass.simpleName}: ${root.message}" else ""
-        return "${t.javaClass.simpleName}: ${t.message}$chain · network: ${networkSummary()}"
+        return "${t.javaClass.simpleName}: ${t.message}$chain · network: ${networkSummary()} · app v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
     }
 
     private fun cm() = activity.getSystemService(android.net.ConnectivityManager::class.java)
