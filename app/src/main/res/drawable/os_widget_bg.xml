@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/os_stone_bg" />
-    <item android:drawable="@drawable/os_panel" />
+    <item><shape><solid android:color="#FF000000" /></shape></item>
+    <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp"><shape><solid android:color="#FF7A6C56" /></shape></item>
+    <item android:left="3dp" android:top="3dp" android:right="1dp" android:bottom="1dp"><shape><solid android:color="#FF1C1711" /></shape></item>
+    <item android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp"><bitmap android:src="@drawable/os_panel_tile" android:tileMode="repeat" android:filter="false" /></item>
+    <item android:left="4dp" android:top="4dp" android:right="4dp" android:bottom="4dp"><shape><solid android:color="#00000000" /><stroke android:width="1dp" android:color="#59241D14" /></shape></item>
 </layer-list>

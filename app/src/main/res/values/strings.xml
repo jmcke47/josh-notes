@@ -67,4 +67,8 @@
     <string name="backup_restore">Restore…</string>
     <string name="backup_help">Pick a folder on this phone or in a cloud app that offers folders here (e.g. OneDrive, Dropbox, Nextcloud). The last 10 backups are kept, including photos and voice memos. To sync between phones, choose the same cloud folder on both. Note: the Google Drive app doesn\'t offer folder access on most phones — use a folder that Drive syncs, or Export backup from the menu.</string>
     <string name="voice_action_title">Mic button, widget mic &amp; volume keys</string>
+    <string name="gdrive_title">Google Drive (direct)</string>
+    <string name="gdrive_connect">Back up to Google Drive…</string>
+    <string name="gdrive_disconnect">Disconnect Google Drive</string>
+    <string name="gdrive_help">Backups go to a private app folder in your Google Drive (hidden in the Drive app; only Josh Notes can see it). Same zip as folder backups, last 10 kept. You can use this, a folder, or both.</string>
 </resources>

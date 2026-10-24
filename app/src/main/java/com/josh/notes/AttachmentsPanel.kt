@@ -70,7 +70,7 @@ class AttachmentsPanel(
 
     fun showAddMenu() {
         val items = arrayOf("Take photo", "Photo or video from gallery", "File", "Record voice memo", "Record + transcribe (offline)")
-        MaterialAlertDialogBuilder(activity).setTitle(R.string.attach)
+        osDialog(activity).setTitle(R.string.attach)
             .setItems(items) { _, w ->
                 when (w) {
                     0 -> capturePhoto()
@@ -150,7 +150,7 @@ class AttachmentsPanel(
                 orientation = LinearLayout.VERTICAL; gravity = android.view.Gravity.CENTER
                 setPadding((6 * d).toInt(), (6 * d).toInt(), (6 * d).toInt(), (6 * d).toInt())
                 addView(ImageView(activity).apply { setImageResource(R.drawable.ic_file); layoutParams = LinearLayout.LayoutParams((32 * d).toInt(), (32 * d).toInt()) })
-                addView(TextView(activity).apply { text = a.name; maxLines = 2; textSize = 11f; gravity = android.view.Gravity.CENTER
+                addView(TextView(box.context).apply { text = a.name; maxLines = 2; textSize = 11f; gravity = android.view.Gravity.CENTER
                     ellipsize = android.text.TextUtils.TruncateAt.MIDDLE })
             })
         }
@@ -158,14 +158,14 @@ class AttachmentsPanel(
     }
 
     private fun tileMenu(noteId: Long, a: Attachment) {
-        MaterialAlertDialogBuilder(activity).setTitle(a.name)
+        osDialog(activity).setTitle(a.name)
             .setItems(arrayOf("Open", "Share", "Delete")) { _, w ->
                 when (w) { 0 -> open(noteId, a); 1 -> share(noteId, a); 2 -> confirmRemove(a) }
             }.show()
     }
 
     private fun confirmRemove(a: Attachment) {
-        MaterialAlertDialogBuilder(activity).setTitle("Delete attachment?").setMessage(a.name)
+        osDialog(activity).setTitle("Delete attachment?").setMessage(a.name)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.delete) { _, _ -> remove(a) }.show()
     }
@@ -202,7 +202,7 @@ class AttachmentsPanel(
     }
 
     private fun audioRow(noteId: Long, a: Attachment): View {
-        val v = LayoutInflater.from(activity).inflate(R.layout.item_audio, box, false)
+        val v = LayoutInflater.from(box.context).inflate(R.layout.item_audio, box, false)
         val play = v.findViewById<ImageButton>(R.id.play)
         val seek = v.findViewById<SeekBar>(R.id.seek)
         v.findViewById<TextView>(R.id.time).text = fmt(a.durationMs)
@@ -224,7 +224,7 @@ class AttachmentsPanel(
         })
         v.findViewById<ImageButton>(R.id.more).setOnClickListener {
             val opts = arrayOf(if (a.transcript.isBlank()) "Transcribe (offline)" else "Transcribe again", "Insert transcript into note", "Share", "Delete")
-            MaterialAlertDialogBuilder(activity).setTitle(a.name).setItems(opts) { _, w ->
+            osDialog(activity).setTitle(a.name).setItems(opts) { _, w ->
                 when (w) {
                     0 -> dictation.withVoskModel("Transcribing") { transcribe(noteId, a) }
                     1 -> if (a.transcript.isNotBlank()) insertText(a.transcript) else toast("Transcribe it first")
@@ -284,7 +284,7 @@ class AttachmentsPanel(
         val content = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(pad, pad / 2, pad, 0)
             addView(timer); addView(level); addView(live) }
         var cancelled = false
-        recDialog = MaterialAlertDialogBuilder(activity)
+        recDialog = osDialog(activity)
             .setTitle(if (transcribe) "Recording + transcribing" else "Recording voice memo")
             .setView(content).setCancelable(false)
             .setPositiveButton("Stop & save") { _, _ -> finishRecording(noteId, out, finals, transcribe, cancelled) }
@@ -346,7 +346,7 @@ class AttachmentsPanel(
     private fun transcribe(noteId: Long, a: Attachment) {
         val bar = LinearProgressIndicator(activity).apply { max = 100 }
         val pad = (24 * d).toInt()
-        val dlg = MaterialAlertDialogBuilder(activity).setTitle("Transcribing offline…")
+        val dlg = osDialog(activity).setTitle("Transcribing offline…")
             .setView(LinearLayout(activity).apply { setPadding(pad, pad / 2, pad, 0); addView(bar) })
             .setCancelable(false).show()
         io.execute {
@@ -366,7 +366,7 @@ class AttachmentsPanel(
                     if (t.isBlank()) toast("No speech found in this memo")
                     else {
                         replace(a.copy(transcript = t))
-                        MaterialAlertDialogBuilder(activity).setTitle("Transcript").setMessage(t)
+                        osDialog(activity).setTitle("Transcript").setMessage(t)
                             .setNegativeButton("Close", null)
                             .setPositiveButton("Insert into note") { _, _ -> insertText(t.replaceFirstChar { it.titlecase() }) }.show()
                     }

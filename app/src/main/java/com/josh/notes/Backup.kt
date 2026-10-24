@@ -86,9 +86,12 @@ object Backup {
 
     // ------------------------------------------------------------------ scheduling
 
+    /** Folder and/or Google Drive automatic backups. */
+    fun anyAuto(ctx: Context) = autoEnabled(ctx) || GoogleDrive.autoEnabled(ctx)
+
     fun schedule(ctx: Context) {
         val wm = WorkManager.getInstance(ctx.applicationContext)
-        if (!autoEnabled(ctx)) { wm.cancelUniqueWork(WORK_DAILY); wm.cancelUniqueWork(WORK_CHANGE); return }
+        if (!anyAuto(ctx)) { wm.cancelUniqueWork(WORK_DAILY); wm.cancelUniqueWork(WORK_CHANGE); return }
         wm.enqueueUniquePeriodicWork(WORK_DAILY, ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<BackupWorker>(24, TimeUnit.HOURS)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES).build())
@@ -96,7 +99,7 @@ object Backup {
 
     /** Debounced: a backup runs ~2 minutes after the last change. */
     fun onLocalChange(ctx: Context) {
-        if (!autoEnabled(ctx)) return
+        if (!anyAuto(ctx)) return
         runCatching {
             WorkManager.getInstance(ctx.applicationContext).enqueueUniqueWork(WORK_CHANGE, ExistingWorkPolicy.REPLACE,
                 OneTimeWorkRequestBuilder<BackupWorker>().setInitialDelay(2, TimeUnit.MINUTES)
@@ -254,8 +257,12 @@ object Backup {
 
 class BackupWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, params) {
     override fun doWork(): Result {
-        if (Backup.folder(applicationContext) == null) return Result.success()
-        return try { Backup.backupNow(applicationContext); Result.success() }
-        catch (_: Exception) { if (runAttemptCount < 4) Result.retry() else Result.failure() }
+        val ctx = applicationContext
+        var retry = false
+        if (Backup.autoEnabled(ctx)) try { Backup.backupNow(ctx) } catch (_: Exception) { retry = true }
+        if (GoogleDrive.autoEnabled(ctx)) try { GoogleDrive.backupNow(ctx) }
+            catch (_: GoogleDrive.NeedsConsent) { /* needs the user; shown in Settings */ }
+            catch (_: Exception) { retry = true }
+        return if (!retry) Result.success() else if (runAttemptCount < 4) Result.retry() else Result.failure()
     }
 }

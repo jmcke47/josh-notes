@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Old School theme: chatbox-style row ("Title: preview"). Same ids as item_note.xml. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/os_chat_row"
+    android:gravity="center_vertical"
+    android:minHeight="52dp"
+    android:orientation="horizontal"
+    android:paddingStart="6dp"
+    android:paddingEnd="6dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+    <View
+        android:id="@+id/color_strip"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="6dp" />
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:shadowColor="#00000000"
+                android:shadowRadius="0"
+                android:textColor="@color/os_ink"
+                android:textSize="17sp" />
+            <ImageView android:id="@+id/memo" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginStart="4dp"
+                android:contentDescription="Voice memo" android:src="@drawable/ic_waveform" android:visibility="gone" app:tint="@color/os_chat_red" />
+            <ImageView android:id="@+id/clip" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginStart="4dp"
+                android:contentDescription="@string/attach" android:src="@drawable/ic_attach" android:visibility="gone" app:tint="@color/os_chat_red" />
+            <ImageView android:id="@+id/bell" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginStart="4dp"
+                android:contentDescription="@string/reminder" android:src="@drawable/ic_bell" app:tint="@color/os_chat_red" />
+            <ImageView android:id="@+id/pin" android:layout_width="16dp" android:layout_height="16dp" android:layout_marginStart="4dp"
+                android:contentDescription="@string/pin" android:src="@drawable/ic_pin" app:tint="@color/os_chat_red" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:shadowColor="#00000000"
+            android:shadowRadius="0"
+            android:textColor="@color/os_chat_blue"
+            android:textSize="15sp" />
+        <TextView
+            android:id="@+id/date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:shadowColor="#00000000"
+            android:shadowRadius="0"
+            android:textColor="@color/os_chat_red"
+            android:textSize="12sp" />
+    </LinearLayout>
+    <ImageView
+        android:id="@+id/thumb"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="6dp"
+        android:background="#FF000000"
+        android:importantForAccessibility="no"
+        android:padding="1dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+    <FrameLayout
+        android:id="@+id/hitsplat"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="6dp"
+        android:background="@drawable/os_hitsplat"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/hitsplat_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="@color/os_white"
+            android:textSize="13sp" />
+    </FrameLayout>
+</LinearLayout>

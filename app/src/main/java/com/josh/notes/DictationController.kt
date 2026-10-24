@@ -95,7 +95,7 @@ class DictationController(
     }
 
     private fun offerChoice() {
-        val b = MaterialAlertDialogBuilder(activity)
+        val b = osDialog(activity)
             .setTitle("Offline dictation")
             .setMessage("No on-device speech recognizer was found on this phone.\n\nDownload the offline English voice model (about $MODEL_SIZE_MB MB, one time)? Speech never leaves your phone.")
             .setPositiveButton("Download") { _, _ -> downloadModel { startVosk() } }
@@ -138,7 +138,7 @@ class DictationController(
                     error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> toast("Didn't catch that")
                     langMissing || error == SpeechRecognizer.ERROR_NETWORK || error == SpeechRecognizer.ERROR_SERVER ||
                             error == SpeechRecognizer.ERROR_CLIENT || error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY ->
-                        MaterialAlertDialogBuilder(activity)
+                        osDialog(activity)
                             .setTitle("System recognizer unavailable")
                             .setMessage("Android's recognizer couldn't run offline (error $error). Use the fully offline Vosk engine instead?")
                             .setPositiveButton("Use Vosk") { _, _ -> engine = Engine.VOSK; startVoskOrDownload() }
@@ -161,7 +161,7 @@ class DictationController(
 
     private fun startVoskOrDownload() {
         if (modelReady()) startVosk()
-        else MaterialAlertDialogBuilder(activity)
+        else osDialog(activity)
             .setTitle("Download offline voice model?")
             .setMessage("Vosk needs a one-time download of the English model (about $MODEL_SIZE_MB MB). After that dictation works with no internet.")
             .setPositiveButton("Download") { _, _ -> downloadModel { startVosk() } }
@@ -213,7 +213,7 @@ class DictationController(
     /** Ensure the offline model exists, offering the one-time download; then runs [then] on the main thread. */
     fun withVoskModel(reason: String, then: () -> Unit) {
         if (modelReady()) { then(); return }
-        MaterialAlertDialogBuilder(activity)
+        osDialog(activity)
             .setTitle("Download offline voice model?")
             .setMessage("$reason needs the offline English model (about $MODEL_SIZE_MB MB, one time). Speech never leaves your phone.")
             .setPositiveButton("Download") { _, _ -> downloadModel(then) }
@@ -228,7 +228,7 @@ class DictationController(
             val p = (24 * resources.displayMetrics.density).toInt(); setPadding(p, p / 2, p, p / 2); addView(bar)
         }
         var cancelled = false
-        val d = MaterialAlertDialogBuilder(activity).setTitle("Downloading voice model…").setView(box)
+        val d = osDialog(activity).setTitle("Downloading voice model…").setView(box)
             .setCancelable(false).setNegativeButton(android.R.string.cancel) { _, _ -> cancelled = true }.show()
         io.execute {
             val tmpZip = File(activity.cacheDir, "vosk-model.zip")
@@ -289,7 +289,7 @@ class DictationController(
             orientation = LinearLayout.VERTICAL; setPadding(pad, pad / 2, pad, 0); addView(text); addView(bar)
         }
         liveText = text
-        dialog = MaterialAlertDialogBuilder(activity)
+        dialog = osDialog(activity)
             .setTitle(title).setView(box).setCancelable(false)
             .setPositiveButton("Done", null)
             .setNegativeButton(android.R.string.cancel) { _, _ -> cancel() }

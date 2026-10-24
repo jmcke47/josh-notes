@@ -19,6 +19,14 @@
         android:layout_height="4dp"
         android:visibility="gone" />
 
+    <LinearLayout
+        android:id="@+id/paper"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:theme="?attr/osContentOverlay">
+
     <EditText
         android:id="@+id/title"
         android:layout_width="match_parent"
@@ -108,5 +116,6 @@
         android:paddingHorizontal="20dp"
         android:paddingVertical="6dp"
         android:textAppearance="?attr/textAppearanceLabelSmall"
-        android:textColor="?attr/colorOutline" />
+        android:textColor="?attr/colorOnSurfaceVariant" />
+    </LinearLayout>
 </LinearLayout>

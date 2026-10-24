@@ -9,3 +9,4 @@ release/
 *.keystore
 keystore.properties
 version.properties.bak
+screens/

@@ -77,7 +77,7 @@ class UpdateController(private val activity: AppCompatActivity) {
         val detail: TextView = view.findViewById(R.id.detail)
         val progress: LinearProgressIndicator = view.findViewById(R.id.progress)
         val notes: TextView = view.findViewById(R.id.notes)
-        val dialog: AlertDialog = MaterialAlertDialogBuilder(activity)
+        val dialog: AlertDialog = osDialog(activity)
             .setView(view).setCancelable(false)
             .setNegativeButton(android.R.string.cancel) { _, _ -> cancelled = true }
             .show()
@@ -153,7 +153,7 @@ class UpdateController(private val activity: AppCompatActivity) {
         val box = FrameLayout(activity).apply {
             val p = (20 * resources.displayMetrics.density).toInt(); setPadding(p, p / 2, p, 0); addView(input)
         }
-        MaterialAlertDialogBuilder(activity)
+        osDialog(activity)
             .setTitle(R.string.update_url)
             .setMessage("Advanced: URL of update.json.")
             .setView(box)
@@ -300,7 +300,7 @@ class UpdateController(private val activity: AppCompatActivity) {
     private fun install(apk: File) {
         if (!activity.packageManager.canRequestPackageInstalls()) {
             pendingApk = apk
-            MaterialAlertDialogBuilder(activity)
+            osDialog(activity)
                 .setTitle("One-time permission")
                 .setMessage("Allow Josh Notes to install its own updates. Turn on the switch on the next screen, then come back — the update will continue.")
                 .setNegativeButton(android.R.string.cancel) { _, _ -> pendingApk = null }

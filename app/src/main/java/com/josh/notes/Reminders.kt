@@ -146,7 +146,7 @@ class ReminderReceiver : BroadcastReceiver() {
                             if (it.repeat.isRepeating) it.copy(snoozeAt = 0L)
                             else it.copy(reminderAt = 0L, reminderFired = false, snoozeAt = 0L)
                         }
-                        Levels.award(context)
+                        Levels.addXp(context, Levels.XP_REMINDER, pendingIfLevel = true)
                     }
                     Reminders.ACTION_SNOOZE -> {
                         NotificationManagerCompat.from(context).cancel(id.hashCode())

@@ -1,0 +1,4 @@
+<resources>
+    <!-- Theme overlay applied to "paper" content areas (editor). Empty in normal themes. -->
+    <attr name="osContentOverlay" format="reference" />
+</resources>

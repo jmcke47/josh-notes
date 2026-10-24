@@ -15,7 +15,8 @@ import com.josh.notes.sortedFor
 class NotesWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory = Factory(applicationContext)
 
-    private class Factory(private val context: Context) : RemoteViewsFactory {
+    @androidx.annotation.VisibleForTesting
+    internal class Factory(private val context: Context) : RemoteViewsFactory {
         private var notes: List<Note> = emptyList()
 
         override fun onCreate() {}
@@ -28,8 +29,8 @@ class NotesWidgetService : RemoteViewsService() {
         override fun hasStableIds() = true
 
         override fun getViewAt(position: Int): RemoteViews {
-            val rv = RemoteViews(context.packageName,
-                if (com.josh.notes.AppSettings.oldSchool(context)) R.layout.widget_item_os else R.layout.widget_item)
+            val os = com.josh.notes.AppSettings.oldSchool(context)
+            val rv = RemoteViews(context.packageName, if (os) R.layout.widget_item_os else R.layout.widget_item)
             val n = notes.getOrNull(position) ?: return rv
             rv.setTextViewText(R.id.widget_item_title, n.displayTitle.ifBlank { context.getString(R.string.untitled) })
             val locked = com.josh.notes.AppLock.enabled(context)
@@ -45,6 +46,14 @@ class NotesWidgetService : RemoteViewsService() {
             else {
                 rv.setViewVisibility(R.id.widget_item_color, android.view.View.VISIBLE)
                 rv.setInt(R.id.widget_item_color, "setColorFilter", NoteColors.palette[n.color])
+            }
+            if (os) {
+                rv.setTextViewText(R.id.widget_item_title, n.displayTitle.ifBlank { context.getString(R.string.untitled) } + ":")
+                val now = System.currentTimeMillis()
+                val overdue = n.reminderAt in 1..now
+                rv.setViewVisibility(R.id.widget_item_hitsplat, if (overdue) android.view.View.VISIBLE else android.view.View.GONE)
+                if (overdue) rv.setTextViewText(R.id.widget_item_hitsplat_text, ((now - n.reminderAt) / 86_400_000L + 1).coerceAtMost(99).toString())
+                if (overdue) rv.setViewVisibility(R.id.widget_item_bell, android.view.View.GONE)
             }
             rv.setTextViewText(R.id.widget_item_body, preview)
             rv.setViewVisibility(R.id.widget_item_body, if (preview.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE)

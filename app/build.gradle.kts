@@ -57,7 +57,16 @@ android {
     buildFeatures { buildConfig = true }
     // Compress native libs (Vosk) inside the APK: much smaller download.
     packaging { jniLibs { useLegacyPackaging = true } }
-    testOptions { unitTests.isReturnDefaultValues = true }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            // ./gradlew testDebugUnitTest -PscreensDir=/path renders Robolectric screenshots there.
+            it.systemProperty("screens.dir", (project.findProperty("screensDir") as String?) ?: "")
+            it.maxHeapSize = "3g"
+            it.jvmArgs("--add-opens=java.base/java.io=ALL-UNNAMED", "--add-opens=java.base/java.lang=ALL-UNNAMED", "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -76,7 +85,11 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.12.0")
     implementation("androidx.documentfile:documentfile:1.1.0")
     implementation("androidx.exifinterface:exifinterface:1.4.2")
+    implementation("com.google.android.gms:play-services-auth:22.0.0")
+    implementation("com.squareup.okhttp3:okhttp:5.5.1")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("androidx.test:core:1.7.0")
     testImplementation("org.json:json:20250517")
     implementation("net.java.dev.jna:jna:5.18.1@aar")
 }

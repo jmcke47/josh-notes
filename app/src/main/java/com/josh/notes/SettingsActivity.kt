@@ -27,7 +27,96 @@ class SettingsActivity : LockableActivity() {
         if (Backup.folder(this) != null) backupNow()
     }
 
-    override fun onResume() { super.onResume(); if (::statusView.isInitialized) refreshBackup() }
+    override fun onResume() { super.onResume(); if (::statusView.isInitialized) { refreshBackup(); refreshDrive() } }
+
+    // ---------------------------------------------------------------- Google Drive
+    private val driveConsent = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()) { res ->
+        GoogleDrive.handleConsentResult(this, res.data)
+            .onSuccess { refreshDrive(); driveBackupNow() }
+            .onFailure { showDriveError(it) }
+    }
+
+    private fun showDriveError(e: Throwable) {
+        osDialog(this).setTitle("Google Drive")
+            .setMessage(GoogleDrive.explain(e)).setPositiveButton(android.R.string.ok, null).show()
+        refreshDrive()
+    }
+
+    private fun refreshDrive() {
+        val on = GoogleDrive.enabled(this)
+        val status = findViewById<android.widget.TextView>(R.id.gdrive_status)
+        val parts = mutableListOf<String>()
+        parts += if (on) "Connected" + (GoogleDrive.account(this)?.let { " as $it" } ?: "") else "Not connected"
+        val ok = GoogleDrive.lastOk(this); val err = GoogleDrive.lastError(this)
+        if (ok > 0) parts += "Last Drive backup: " + ReminderFormat.short(this, ok) + " (${GoogleDrive.lastCount(this)} notes)"
+        if (err != null && GoogleDrive.lastErrorAt(this) > ok) parts += "Last attempt failed " + ReminderFormat.short(this, GoogleDrive.lastErrorAt(this)) + ": $err"
+        status.text = parts.joinToString("\n")
+        findViewById<View>(R.id.gdrive_connect).visibility = if (on) View.GONE else View.VISIBLE
+        listOf(R.id.gdrive_now, R.id.gdrive_restore, R.id.gdrive_disconnect, R.id.gdrive_auto).forEach {
+            findViewById<View>(it).visibility = if (on) View.VISIBLE else View.GONE
+        }
+        findViewById<MaterialSwitch>(R.id.gdrive_auto).apply {
+            setOnCheckedChangeListener(null); isChecked = GoogleDrive.autoEnabled(this@SettingsActivity)
+            setOnCheckedChangeListener { _, v -> GoogleDrive.setAuto(this@SettingsActivity, v) }
+        }
+    }
+
+    private fun connectDrive() {
+        GoogleDrive.connect(this,
+            launchConsent = { sender -> driveConsent.launch(androidx.activity.result.IntentSenderRequest.Builder(sender).build()) },
+            done = { r -> r.onSuccess { refreshDrive(); driveBackupNow() }.onFailure { showDriveError(it) } })
+    }
+
+    private fun driveBackupNow() {
+        val d = progress("Backing up to Google Drive…", "Uploading. Large photo/memo backups can take a while on mobile data.")
+        io.execute {
+            val r = runCatching { GoogleDrive.backupNow(this) }
+            runOnUiThread { d.dismiss(); refreshDrive()
+                r.onSuccess { msg("Saved to Google Drive: $it") }.onFailure {
+                    if (it is GoogleDrive.NeedsConsent) connectDrive() else msg("Drive backup failed: ${it.message}") } }
+        }
+    }
+
+    private fun driveRestore() {
+        val d = progress("Looking for Drive backups…", "Contacting Google Drive…")
+        io.execute {
+            val r = runCatching { GoogleDrive.list(this) }
+            runOnUiThread {
+                d.dismiss()
+                r.onFailure { if (it is GoogleDrive.NeedsConsent) connectDrive() else msg("Couldn't list Drive backups: ${it.message}") }
+                r.onSuccess { list ->
+                    if (list.isEmpty()) { msg("No backups in Google Drive yet"); return@onSuccess }
+                    val labels = list.map { it.name.removePrefix(Backup.PREFIX).removeSuffix(".zip") + "  ·  " +
+                            android.text.format.Formatter.formatShortFileSize(this, it.size) }.toTypedArray()
+                    osDialog(this).setTitle("Restore which Drive backup?")
+                        .setItems(labels) { _, w -> driveRestoreMode(list[w]) }.setNegativeButton(android.R.string.cancel, null).show()
+                }
+            }
+        }
+    }
+
+    private fun driveRestoreMode(item: GoogleDrive.Item) {
+        fun run(replace: Boolean) {
+            val d = progress("Restoring from Google Drive…", "Downloading ${item.name}")
+            io.execute {
+                val r = runCatching { if (replace) GoogleDrive.restoreReplace(this, item) else GoogleDrive.restoreMerge(this, item) }
+                runOnUiThread { d.dismiss()
+                    r.onSuccess { msg(if (replace) "Restored $it notes" else "Merged: $it notes updated or added") }
+                        .onFailure { msg("Restore failed (your notes were not changed): ${it.message}") } }
+            }
+        }
+        osDialog(this).setTitle(item.name)
+            .setMessage("Merge keeps all your current notes and takes the newer version of any note that's in both.\n\n" +
+                    "Replace makes the app exactly match the backup (a safety copy of your current notes is saved first).")
+            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton("Replace…") { _, _ ->
+                osDialog(this).setTitle("Replace all notes?")
+                    .setMessage("Notes not in this backup will be removed from the app. A safety copy is kept on this phone.")
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton("Replace") { _, _ -> run(true) }.show()
+            }
+            .setPositiveButton("Merge") { _, _ -> run(false) }.show()
+    }
 
     private lateinit var statusView: android.widget.TextView
     private lateinit var folderView: android.widget.TextView
@@ -55,7 +144,7 @@ class SettingsActivity : LockableActivity() {
 
     private fun progress(title: String, message: String): androidx.appcompat.app.AlertDialog {
         val pad = (24 * resources.displayMetrics.density).toInt()
-        return com.google.android.material.dialog.MaterialAlertDialogBuilder(this).setTitle(title).setMessage(message)
+        return osDialog(this).setTitle(title).setMessage(message)
             .setView(android.widget.FrameLayout(this).apply { setPadding(pad, 0, pad, 0)
                 addView(com.google.android.material.progressindicator.LinearProgressIndicator(this@SettingsActivity).apply { isIndeterminate = true }) })
             .setCancelable(false).show()
@@ -81,7 +170,7 @@ class SettingsActivity : LockableActivity() {
                     if (list.isEmpty()) { msg("No Josh Notes backups in that folder yet"); return@onSuccess }
                     val labels = list.map { it.name.removePrefix(Backup.PREFIX).removeSuffix(".zip") + "  ·  " +
                             android.text.format.Formatter.formatShortFileSize(this, it.size) }.toTypedArray()
-                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this).setTitle("Restore which backup?")
+                    osDialog(this).setTitle("Restore which backup?")
                         .setItems(labels) { _, w -> restoreMode(list[w]) }.setNegativeButton(android.R.string.cancel, null).show()
                 }
             }
@@ -89,12 +178,12 @@ class SettingsActivity : LockableActivity() {
     }
 
     private fun restoreMode(info: Backup.Info) {
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this).setTitle(info.name)
+        osDialog(this).setTitle(info.name)
             .setMessage("Merge keeps all your current notes and takes the newer version of any note that's in both.\n\n" +
                     "Replace makes the app exactly match the backup (a safety copy of your current notes is saved first).")
             .setNegativeButton(android.R.string.cancel, null)
             .setNeutralButton("Replace…") { _, _ ->
-                com.google.android.material.dialog.MaterialAlertDialogBuilder(this).setTitle("Replace all notes?")
+                osDialog(this).setTitle("Replace all notes?")
                     .setMessage("Notes not in this backup will be removed from the app. A safety copy is kept on this phone.")
                     .setNegativeButton(android.R.string.cancel, null)
                     .setPositiveButton("Replace") { _, _ -> runRestore(info, replace = true) }.show()
@@ -116,6 +205,11 @@ class SettingsActivity : LockableActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
+        if (AppSettings.oldSchool(this)) findViewById<View>(R.id.settings_content).apply {
+            val p = paddingLeft
+            setBackgroundResource(R.drawable.os_panel); setPadding(p, p, p, p)
+            (layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.let { val m = (8 * resources.displayMetrics.density).toInt(); it.setMargins(m, m, m, m) }
+        }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { v, insets ->
             val b = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             v.updatePadding(left = b.left, top = b.top, right = b.right, bottom = b.bottom)
@@ -157,6 +251,7 @@ class SettingsActivity : LockableActivity() {
         }
         findViewById<MaterialSwitch>(R.id.dynamic_color).apply {
             if (!DynamicColors.isDynamicColorAvailable()) { isEnabled = false; text = "$text — not supported on this phone" }
+            if (AppSettings.oldSchool(this@SettingsActivity)) { isEnabled = false; text = "Material You colours (not used by Old School)" }
             isChecked = AppSettings.dynamicColor(this@SettingsActivity)
             setOnCheckedChangeListener { _, on ->
                 AppSettings.setDynamicColor(this@SettingsActivity, on)
@@ -171,7 +266,7 @@ class SettingsActivity : LockableActivity() {
         }
         findViewById<View>(R.id.font_credit).setOnClickListener {
             val text = runCatching { assets.open("licenses/PixelifySans-OFL.txt").bufferedReader().readText() }.getOrDefault("")
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this).setTitle("Pixelify Sans — SIL OFL 1.1")
+            osDialog(this).setTitle("Pixelify Sans — SIL OFL 1.1")
                 .setMessage(text).setPositiveButton(android.R.string.ok, null).show()
         }
 
@@ -181,6 +276,18 @@ class SettingsActivity : LockableActivity() {
         findViewById<View>(R.id.backup_now).setOnClickListener { backupNow() }
         findViewById<View>(R.id.backup_restore).setOnClickListener { restore() }
         refreshBackup()
+
+        // Google Drive
+        findViewById<View>(R.id.gdrive_connect).setOnClickListener { connectDrive() }
+        findViewById<View>(R.id.gdrive_now).setOnClickListener { driveBackupNow() }
+        findViewById<View>(R.id.gdrive_restore).setOnClickListener { driveRestore() }
+        findViewById<View>(R.id.gdrive_disconnect).setOnClickListener {
+            osDialog(this).setTitle("Disconnect Google Drive?")
+                .setMessage("Automatic Drive backups stop. Existing backups stay in your Drive's app folder.")
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Disconnect") { _, _ -> GoogleDrive.disconnect(this); refreshDrive() }.show()
+        }
+        refreshDrive()
 
         // Voice action
         val voice = findViewById<RadioGroup>(R.id.voice_group)

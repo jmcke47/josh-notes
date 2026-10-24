@@ -35,7 +35,7 @@ class MainActivity : LockableActivity() {
 
     companion object { @JvmStatic var themeChanged = false }
 
-    private val adapter = NotesAdapter { if (mode == Mode.TRASH) trashActions(it) else openNote(it.id) }
+    private val adapter by lazy { NotesAdapter(oldSchool) { if (mode == Mode.TRASH) trashActions(it) else openNote(it.id) } }
     private lateinit var empty: TextView
     private lateinit var toolbar: MaterialToolbar
     private lateinit var root: View
@@ -104,6 +104,7 @@ class MainActivity : LockableActivity() {
 
         fab = findViewById(R.id.fab)
         fab.setOnClickListener { openNote(null) }
+        if (oldSchool) setupOldSchool(list)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -114,7 +115,7 @@ class MainActivity : LockableActivity() {
 
         if (savedInstanceState == null) updateController.quietCheck { m ->
             Snackbar.make(root, "Update available: v${m.versionName}", Snackbar.LENGTH_INDEFINITE)
-                .setAnchorView(fab.takeIf { it.isShown })
+                .setAnchorView(anchor())
                 .setAction("Update") { updateController.startUpdate(m) }
                 .show()
         }
@@ -134,8 +135,71 @@ class MainActivity : LockableActivity() {
 
     override fun onUnlocked() = refresh()
 
+    private fun anchor(): View? = if (oldSchool) findViewById<View>(R.id.os_tabs) else fab.takeIf { it.isShown }
+    private val oldSchool by lazy { AppSettings.oldSchool(this) }
+    private val osFab by lazy { findViewById<View>(R.id.os_fab) }
+
+    /** Old School theme: chatbox list, stone tab bar, minimap-style new-note button. */
+    private fun setupOldSchool(list: RecyclerView) {
+        val d = resources.displayMetrics.density
+        fab.visibility = View.GONE
+        osFab.visibility = View.VISIBLE
+        osFab.setOnClickListener { openNote(null) }
+        findViewById<View>(R.id.os_tabs).visibility = View.VISIBLE
+        (list.layoutParams as ViewGroup.MarginLayoutParams).apply {
+            val m = (8 * d).toInt(); setMargins(m, m, m, (56 * d).toInt())
+        }
+        list.setBackgroundResource(R.drawable.os_chatbox)
+        val p = (6 * d).toInt()
+        list.setPadding(p, p, p, (90 * d).toInt())
+        findViewById<View>(R.id.tab_notes).setOnClickListener { setMode(Mode.NOTES) }
+        findViewById<View>(R.id.tab_archive).setOnClickListener { setMode(Mode.ARCHIVE) }
+        findViewById<View>(R.id.tab_trash).setOnClickListener { setMode(Mode.TRASH) }
+        findViewById<View>(R.id.tab_settings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
+        findViewById<View>(R.id.tab_search).setOnClickListener {
+            if (mode != Mode.NOTES) setMode(Mode.NOTES)
+            toolbar.menu.findItem(R.id.action_search)?.expandActionView()
+        }
+        empty.setTextColor(getColor(R.color.os_ink))
+        empty.setShadowLayer(0f, 0f, 0f, 0)
+    }
+
+    private fun updateTabs() {
+        if (!oldSchool) return
+        findViewById<View>(R.id.tab_notes).isSelected = mode == Mode.NOTES
+        findViewById<View>(R.id.tab_archive).isSelected = mode == Mode.ARCHIVE
+        findViewById<View>(R.id.tab_trash).isSelected = mode == Mode.TRASH
+        osFab.visibility = if (mode == Mode.NOTES) View.VISIBLE else View.GONE
+    }
+
     /** Sync: if the backup folder holds a newer backup from another phone, offer to merge it. */
+    private fun checkNewerDriveBackup() {
+        if (!GoogleDrive.enabled(this)) return
+        Thread {
+            val item = runCatching { GoogleDrive.newerBackup(this) }.getOrNull() ?: return@Thread
+            runOnUiThread {
+                if (isFinishing) return@runOnUiThread
+                Snackbar.make(root, "Newer notes backup in Google Drive", Snackbar.LENGTH_INDEFINITE)
+                    .setAnchorView(anchor())
+                    .setAction("Merge") {
+                        Thread {
+                            val r = runCatching { GoogleDrive.restoreMerge(this, item) }
+                            runOnUiThread {
+                                refresh()
+                                Snackbar.make(root, r.fold({ "Merged: $it notes updated or added" },
+                                    { "Couldn't merge from Drive: ${it.message}" }), Snackbar.LENGTH_LONG).show()
+                            }
+                        }.start()
+                    }
+                    .addCallback(object : Snackbar.Callback() {
+                        override fun onDismissed(b: Snackbar?, event: Int) { if (event != DISMISS_EVENT_ACTION) GoogleDrive.dismiss(this@MainActivity, item.name) }
+                    }).show()
+            }
+        }.start()
+    }
+
     private fun checkNewerBackup() {
+        checkNewerDriveBackup()
         if (Backup.folder(this) == null) return
         Thread {
             val found = runCatching { Backup.newerBackup(this) }.getOrNull() ?: return@Thread
@@ -166,6 +230,7 @@ class MainActivity : LockableActivity() {
         if (themeChanged) { themeChanged = false; recreate(); return }
         refresh()
         updateController.onResume()
+        Levels.consumePendingLevel(this).takeIf { it > 0 }?.let { lvl -> root.post { Levels.levelUp(this, lvl) } }
     }
 
     private fun setupMenu() {
@@ -214,7 +279,7 @@ class MainActivity : LockableActivity() {
     private fun setMode(m: Mode) { mode = m; applyMode(); refresh() }
 
     private fun confirmEmptyTrash() {
-        MaterialAlertDialogBuilder(this).setTitle("Empty Recently deleted?")
+        osDialog(this).setTitle("Empty Recently deleted?")
             .setMessage("All notes in Recently deleted will be permanently deleted.")
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton("Delete forever") { _, _ -> val n = NoteStore.emptyTrash(this); refresh(); snack("Deleted $n notes forever") }
@@ -223,7 +288,7 @@ class MainActivity : LockableActivity() {
 
     private fun trashActions(n: Note) {
         val daysLeft = (NoteStore.TRASH_DAYS - (System.currentTimeMillis() - n.deletedAt) / 86_400_000L).coerceAtLeast(0)
-        MaterialAlertDialogBuilder(this)
+        osDialog(this)
             .setTitle(n.displayTitle.ifBlank { getString(R.string.untitled) })
             .setMessage(n.contentText.take(500).ifBlank { "(empty)" } + "\n\nPermanently deleted in $daysLeft days.")
             .setNeutralButton("Delete forever") { _, _ -> NoteStore.deleteForever(this, n.id); refresh() }
@@ -237,7 +302,7 @@ class MainActivity : LockableActivity() {
         toolbar.menu.findItem(R.id.action_archive_view)?.title = getString(if (mode == Mode.ARCHIVE) R.string.show_notes else R.string.show_archive)
         toolbar.menu.findItem(R.id.action_trash_view)?.title = getString(if (mode == Mode.TRASH) R.string.show_notes else R.string.show_trash)
         toolbar.menu.findItem(R.id.action_empty_trash)?.isVisible = mode == Mode.TRASH
-        if (mode != Mode.NOTES) fab.hide() else fab.show()
+        if (oldSchool) updateTabs() else if (mode != Mode.NOTES) fab.hide() else fab.show()
         if (mode != Mode.NOTES) {
             toolbar.setNavigationIcon(R.drawable.ic_arrow_back)
             toolbar.setNavigationOnClickListener { setMode(Mode.NOTES) }
@@ -263,15 +328,15 @@ class MainActivity : LockableActivity() {
         })
     }
 
-    private fun snack(msg: String) = Snackbar.make(root, msg, Snackbar.LENGTH_LONG).setAnchorView(fab.takeIf { it.isShown }).show()
+    private fun snack(msg: String) = Snackbar.make(root, msg, Snackbar.LENGTH_LONG).setAnchorView(anchor()).show()
 
     private fun error(title: String, t: Throwable) {
-        MaterialAlertDialogBuilder(this).setTitle(title).setMessage(t.message ?: t.javaClass.simpleName)
+        osDialog(this).setTitle(title).setMessage(t.message ?: t.javaClass.simpleName)
             .setPositiveButton(android.R.string.ok, null).show()
     }
 
     private fun showAbout() {
-        MaterialAlertDialogBuilder(this)
+        osDialog(this)
             .setTitle(R.string.app_name)
             .setMessage("Version ${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})\n\nUpdate source:\n${updateController.manifestUrl()}")
             .setPositiveButton(android.R.string.ok, null)
@@ -286,7 +351,7 @@ class MainActivity : LockableActivity() {
             NoteStore.delete(this@MainActivity, note.id)
             refresh()
             Snackbar.make(root, R.string.note_moved_to_trash, Snackbar.LENGTH_LONG)
-                .setAnchorView(fab.takeIf { it.isShown })
+                .setAnchorView(anchor())
                 .setAction(R.string.undo) { NoteStore.restore(this@MainActivity, note); refresh() }
                 .show()
         }
@@ -297,7 +362,7 @@ class MainActivity : LockableActivity() {
         override fun clearView(rv: RecyclerView, vh: RecyclerView.ViewHolder) { super.clearView(rv, vh); vh.itemView.alpha = 1f }
     }
 
-    private class NotesAdapter(val onClick: (Note) -> Unit) : RecyclerView.Adapter<NotesAdapter.VH>() {
+    private class NotesAdapter(val oldSchool: Boolean, val onClick: (Note) -> Unit) : RecyclerView.Adapter<NotesAdapter.VH>() {
         private val thumbs = java.util.concurrent.Executors.newFixedThreadPool(2)
         private var items: List<Note> = emptyList()
         init { setHasStableIds(true) }
@@ -319,12 +384,14 @@ class MainActivity : LockableActivity() {
             val clip: ImageView = v.findViewById(R.id.clip)
             val memo: ImageView = v.findViewById(R.id.memo)
             val thumb: ImageView = v.findViewById(R.id.thumb)
+            val hitsplat: View? = v.findViewById(R.id.hitsplat)
+            val hitsplatText: TextView? = v.findViewById(R.id.hitsplat_text)
         }
 
         override fun getItemId(position: Int) = items[position].id
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-            VH(LayoutInflater.from(parent.context).inflate(R.layout.item_note, parent, false))
+            VH(LayoutInflater.from(parent.context).inflate(if (oldSchool) R.layout.item_note_os else R.layout.item_note, parent, false))
 
         override fun getItemCount() = items.size
 
@@ -349,6 +416,17 @@ class MainActivity : LockableActivity() {
             h.strip.visibility = if (n.color == 0) View.GONE else View.VISIBLE
             h.strip.setBackgroundColor(color)
             h.memo.visibility = if (n.hasAudio) View.VISIBLE else View.GONE
+            // Old School: red "hitsplat" with days overdue.
+            h.hitsplat?.let { hs ->
+                val now = System.currentTimeMillis()
+                val overdue = n.reminderAt in 1..now && !n.inTrash
+                hs.visibility = if (overdue) View.VISIBLE else View.GONE
+                if (overdue) h.hitsplatText?.text = ((now - n.reminderAt) / 86_400_000L + 1).coerceAtMost(99).toString()
+            }
+            if (oldSchool) {
+                h.title.text = h.title.text.toString() + ":"
+                h.bell.visibility = if (n.hasReminder && !n.inTrash && n.reminderAt > System.currentTimeMillis()) View.VISIBLE else View.GONE
+            }
             h.clip.visibility = if (n.hasFiles || (n.hasImages && n.inTrash)) View.VISIBLE else View.GONE
             val img = n.attachments.firstOrNull { it.kind == "image" }
             h.thumb.tag = img?.id

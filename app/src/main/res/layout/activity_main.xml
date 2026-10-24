@@ -45,4 +45,79 @@
         android:layout_margin="16dp"
         android:text="@string/new_note"
         app:icon="@drawable/ic_add" />
+
+    <!-- Old School theme: minimap-style round button + stone tab bar (hidden otherwise). -->
+    <ImageButton
+        android:id="@+id/os_fab"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="64dp"
+        android:background="@null"
+        android:contentDescription="@string/new_note"
+        android:scaleType="fitCenter"
+        android:src="@drawable/os_minimap_fab"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/os_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/os_panel"
+        android:orientation="horizontal"
+        android:padding="3dp"
+        android:visibility="gone">
+        <ImageButton
+            android:id="@+id/tab_notes"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/os_tab"
+            android:contentDescription="@string/app_name"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_os_notes" />
+        <ImageButton
+            android:id="@+id/tab_search"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/os_tab"
+            android:contentDescription="@string/search"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_os_search" />
+        <ImageButton
+            android:id="@+id/tab_archive"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/os_tab"
+            android:contentDescription="@string/show_archive"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_os_archive" />
+        <ImageButton
+            android:id="@+id/tab_trash"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/os_tab"
+            android:contentDescription="@string/show_trash"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_os_bin" />
+        <ImageButton
+            android:id="@+id/tab_settings"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/os_tab"
+            android:contentDescription="@string/settings"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_os_settings" />
+    </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -71,8 +71,11 @@ open class LockableActivity : AppCompatActivity() {
     private var cover: View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (AppSettings.oldSchool(this)) setTheme(R.style.Theme_JoshNotes_OldSchool)
+        val os = AppSettings.oldSchool(this)
+        if (os) setTheme(R.style.Theme_JoshNotes_OldSchool)
         super.onCreate(savedInstanceState)
+        // enableEdgeToEdge() may have created the window before the theme switch.
+        if (os) window.setBackgroundDrawableResource(R.drawable.os_stone_bg)
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {

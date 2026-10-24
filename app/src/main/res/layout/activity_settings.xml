@@ -15,6 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <LinearLayout
+            android:id="@+id/settings_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -52,7 +53,7 @@
                 android:id="@+id/level_ups"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Old School: show &quot;level up&quot; when a checklist or reminder is done" />
+                android:text="Old School: XP drops and level-up banners for ticked items and completed reminders" />
             <TextView
                 android:id="@+id/font_credit"
                 android:layout_width="wrap_content"
@@ -112,6 +113,56 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/backup_help"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                style="@style/SettingsHeader"
+                android:layout_marginTop="24dp"
+                android:text="@string/gdrive_title" />
+            <TextView
+                android:id="@+id/gdrive_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/gdrive_auto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/backup_auto" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/gdrive_connect"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gdrive_connect" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/gdrive_now"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/backup_now" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/gdrive_restore"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/backup_restore" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/gdrive_disconnect"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gdrive_disconnect" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/gdrive_help"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 

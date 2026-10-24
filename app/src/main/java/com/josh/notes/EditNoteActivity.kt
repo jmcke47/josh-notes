@@ -90,6 +90,11 @@ class EditNoteActivity : LockableActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit)
+        if (AppSettings.oldSchool(this)) findViewById<View>(R.id.paper).apply {
+            setBackgroundResource(R.drawable.os_scroll)
+            val d = resources.displayMetrics.density
+            setPadding((10 * d).toInt(), (18 * d).toInt(), (10 * d).toInt(), (16 * d).toInt())
+        }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { v, insets ->
             val b = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()
                     or WindowInsetsCompat.Type.displayCutout())
@@ -106,7 +111,7 @@ class EditNoteActivity : LockableActivity() {
         footer = findViewById(R.id.footer)
         reminderChip = findViewById(R.id.reminder_chip)
         reminderChip.setOnClickListener {
-            MaterialAlertDialogBuilder(this).setTitle(R.string.reminder)
+            osDialog(this).setTitle(R.string.reminder)
                 .setItems(arrayOf("Change date & time", "Change repeat", "Remove reminder")) { _, w ->
                     when (w) { 0 -> setReminder(); 1 -> pickRepeat(reminderAt); 2 -> clearReminder() }
                 }.show()
@@ -303,7 +308,7 @@ class EditNoteActivity : LockableActivity() {
             "Every year", "Every N days…")
         val cur = when (repeatRule.type) { Repeat.Type.NONE -> 0; Repeat.Type.DAILY -> 1; Repeat.Type.WEEKLY -> 2
             Repeat.Type.MONTHLY -> 3; Repeat.Type.YEARLY -> 4; Repeat.Type.EVERY_N_DAYS -> 5 }
-        MaterialAlertDialogBuilder(this).setTitle("Repeat")
+        osDialog(this).setTitle("Repeat")
             .setSingleChoiceItems(opts, cur) { d, w ->
                 d.dismiss()
                 when (w) {
@@ -321,7 +326,7 @@ class EditNoteActivity : LockableActivity() {
     private fun pickWeekdays(at: Long, initial: Set<Int>) {
         val order = Repeat.ORDER
         val checked = order.map { it in initial }.toBooleanArray()
-        MaterialAlertDialogBuilder(this).setTitle("Repeat on")
+        osDialog(this).setTitle("Repeat on")
             .setMultiChoiceItems(order.map { Repeat.dayName(it) }.toTypedArray(), checked) { _, i, c -> checked[i] = c }
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -334,7 +339,7 @@ class EditNoteActivity : LockableActivity() {
     private fun pickEveryN(at: Long) {
         val input = EditText(this).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER; setText(repeatRule.every.coerceAtLeast(2).toString()); selectAll() }
         val pad = (20 * resources.displayMetrics.density).toInt()
-        MaterialAlertDialogBuilder(this).setTitle("Repeat every … days")
+        osDialog(this).setTitle("Repeat every … days")
             .setView(android.widget.FrameLayout(this).apply { setPadding(pad, pad / 2, pad, 0); addView(input) })
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -355,7 +360,7 @@ class EditNoteActivity : LockableActivity() {
 
     private fun offerExactAlarms() {
         if (android.os.Build.VERSION.SDK_INT < 31) return
-        MaterialAlertDialogBuilder(this)
+        osDialog(this)
             .setTitle("Allow exact reminders?")
             .setMessage("Without the \"Alarms & reminders\" permission, Android may deliver reminders a few minutes late.")
             .setNegativeButton("Not now", null)
@@ -402,7 +407,7 @@ class EditNoteActivity : LockableActivity() {
     }
 
     private fun addRow(item: CheckItem, focus: Boolean, index: Int = -1): EditText {
-        val row = LayoutInflater.from(this).inflate(R.layout.item_check, listBox, false)
+        val row = LayoutInflater.from(listBox.context).inflate(R.layout.item_check, listBox, false)
         val cb = row.findViewById<MaterialCheckBox>(R.id.check)
         val et = row.findViewById<EditText>(R.id.text)
         et.setText(item.text)
@@ -410,11 +415,10 @@ class EditNoteActivity : LockableActivity() {
         strike(et, item.checked)
         cb.setOnCheckedChangeListener { _, c ->
             strike(et, c)
-            val items = currentItems().filter { it.text.isNotBlank() }
-            if (c && items.size >= 2 && items.all { it.checked }) {
-                val before = Levels.level(getSharedPreferences("settings", 0).getInt("completions", 0))
-                val lvl = Levels.award(this)
-                Levels.celebrate(this, lvl, lvl > before)
+            if (c && et.text.isNotBlank()) {
+                val items = currentItems().filter { it.text.isNotBlank() }
+                val allDone = items.size >= 2 && items.all { it.checked }
+                Levels.reward(this, Levels.XP_ITEM + if (allDone) Levels.XP_CHECKLIST_DONE else 0)
             }
         }
         et.doAfterTextChangedCompat { updateFooter() }
@@ -489,7 +493,7 @@ class EditNoteActivity : LockableActivity() {
         val pad = (12 * resources.displayMetrics.density).toInt()
         val row = LinearLayout(this).apply { setPadding(pad * 2, pad, pad * 2, 0); orientation = LinearLayout.HORIZONTAL }
         val scroll = android.widget.HorizontalScrollView(this).apply { addView(row) }
-        val dialog = MaterialAlertDialogBuilder(this).setTitle(R.string.colour).setView(scroll)
+        val dialog = osDialog(this).setTitle(R.string.colour).setView(scroll)
             .setNegativeButton(android.R.string.cancel, null).create()
         NoteColors.palette.forEachIndexed { i, c ->
             row.addView(ImageView(this).apply {
@@ -533,7 +537,7 @@ class EditNoteActivity : LockableActivity() {
     }
 
     private fun confirmDelete() {
-        MaterialAlertDialogBuilder(this)
+        osDialog(this)
             .setTitle("Delete note?")
             .setMessage("It'll be kept in Recently deleted for 30 days.")
             .setNegativeButton(android.R.string.cancel, null)
