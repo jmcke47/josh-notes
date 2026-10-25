@@ -47,6 +47,13 @@
             android:layout_marginTop="2dp"
             android:importantForAccessibility="no"
             android:scaleType="fitStart" />
+        <LinearLayout
+            android:id="@+id/widget_item_checks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
     </LinearLayout>
     <FrameLayout
         android:id="@+id/widget_item_hitsplat"

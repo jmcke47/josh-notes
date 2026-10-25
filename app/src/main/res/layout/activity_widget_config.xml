@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_close"
+        app:title="@string/widget_config_title" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        <LinearLayout
+            android:id="@+id/config_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <TextView
+                android:id="@+id/config_intro"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp"
+                android:text="Choose what this widget shows. It always follows the app's theme."
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <RadioGroup
+                android:id="@+id/config_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <RadioButton android:id="@+id/mode_all" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:saveEnabled="false" android:text="All notes" />
+                <RadioButton android:id="@+id/mode_pinned" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:saveEnabled="false" android:text="Pinned notes only" />
+                <RadioButton android:id="@+id/mode_tag" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:saveEnabled="false" android:text="Notes with a #tag" />
+                <RadioButton android:id="@+id/mode_checklist" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:saveEnabled="false" android:text="One checklist (tick items from the widget)" />
+            </RadioGroup>
+            <TextView
+                android:id="@+id/config_sub_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:paddingBottom="4dp"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:visibility="gone" />
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/config_tags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:selectionRequired="true"
+                app:singleSelection="true" />
+            <RadioGroup
+                android:id="@+id/config_checklists"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/config_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/config_save"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Save" />
+</LinearLayout>

@@ -71,6 +71,13 @@
             android:maxLines="3"
             android:textColor="@color/widget_subtext_light"
             android:textSize="12sp" />
+        <LinearLayout
+            android:id="@+id/widget_item_checks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>
 </FrameLayout>

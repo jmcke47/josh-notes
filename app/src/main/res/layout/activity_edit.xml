@@ -20,6 +20,46 @@
         android:visibility="gone" />
 
     <LinearLayout
+        android:id="@+id/secret_lock"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+        <ImageView
+            android:id="@+id/secret_lock_icon"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_lock"
+            app:tint="?attr/colorPrimary" />
+        <TextView
+            android:id="@+id/secret_lock_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:text="@string/secret_note"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+        <TextView
+            android:id="@+id/secret_lock_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="20dp"
+            android:text="@string/secret_unlock_hint"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/secret_unlock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/unlock"
+            app:icon="@drawable/ic_lock" />
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/paper"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -84,6 +124,30 @@
                 android:paddingHorizontal="20dp"
                 android:paddingVertical="8dp"
                 android:textAppearance="?attr/textAppearanceBodyLarge" />
+            <LinearLayout
+                android:id="@+id/checklist_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="4dp"
+                android:visibility="gone">
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/checklist_bar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="100"
+                    app:trackCornerRadius="3dp"
+                    app:trackThickness="6dp" />
+                <TextView
+                    android:id="@+id/checklist_progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="12dp"
+                    android:textAppearance="?attr/textAppearanceLabelLarge" />
+            </LinearLayout>
             <LinearLayout
                 android:id="@+id/checklist"
                 android:layout_width="match_parent"

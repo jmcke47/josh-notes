@@ -24,16 +24,30 @@ object PixelText {
     private fun font(ctx: Context): Typeface =
         font ?: (runCatching { ResourcesCompat.getFont(ctx, R.font.pixelify_sans) }.getOrNull() ?: Typeface.MONOSPACE).also { font = it }
 
+    /** Largest size in [minSp]..[sizeSp] at which [text] fits on one line in [maxWidthPx]. */
+    fun fitSize(ctx: Context, text: CharSequence, sizeSp: Float, minSp: Float, maxWidthPx: Int): Float {
+        val dm = ctx.resources.displayMetrics
+        val paint = TextPaint(TextPaint.ANTI_ALIAS_FLAG).apply { typeface = font(ctx) }
+        var sp = sizeSp
+        while (sp > minSp) {
+            paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, dm)
+            if (paint.measureText(text, 0, text.length) + 2 * dm.density <= maxWidthPx) return sp
+            sp -= 1f
+        }
+        return minSp
+    }
+
     /**
      * @param maxWidthPx text is ellipsized/wrapped to this width.
      * @param maxLines 1 = single ellipsized line.
      */
     fun render(ctx: Context, text: CharSequence, sizeSp: Float, color: Int, maxWidthPx: Int, maxLines: Int = 1,
-               shadow: Boolean = true): Bitmap? {
+               shadow: Boolean = true, strike: Boolean = false): Bitmap? {
         if (text.isBlank()) return null
         val dm = ctx.resources.displayMetrics
         val paint = TextPaint(TextPaint.ANTI_ALIAS_FLAG).apply {
             typeface = font(ctx); textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp, dm); this.color = color
+            isStrikeThruText = strike
         }
         val shadowPx = if (shadow) (1.5f * dm.density).coerceAtLeast(1f) else 0f
         val width = (maxWidthPx - shadowPx).toInt().coerceAtLeast(1)

@@ -42,9 +42,76 @@ class ScreenshotTest {
                 repeat = Repeat(Repeat.Type.WEEKLY, setOf(java.util.Calendar.MONDAY, java.util.Calendar.WEDNESDAY))),
             Note(3, "Shopping", "", now - 3 * h, checklist = true, items = listOf(
                 CheckItem("Milk", true), CheckItem("Bread", true), CheckItem("Coffee beans", false), CheckItem("Eggs", false))),
-            Note(4, "Gym plan", "Mon: legs\nWed: push\nFri: pull", now - 30 * h, color = 3),
-            Note(5, "Voice memo — ideas", "Transcript: build a shed in spring", now - 50 * h),
+            Note(4, "Gym plan", "Mon: legs\nWed: push\nFri: pull #gym", now - 30 * h, color = 3),
+            Note(5, "Voice memo — ideas", "Transcript: build a shed in spring #home", now - 50 * h),
+            Note(6, "Garden quest", "", now - 70 * h, checklist = true, quest = true, items = listOf(
+                CheckItem("Buy seeds #home", true), CheckItem("Dig the vegetable bed", true), CheckItem("Plant tomatoes", false),
+                CheckItem("Build a trellis", false), CheckItem("Water every morning", false), CheckItem("Mulch the paths", false))),
         ))
+        NoteStore.all(ctx).filter { it.secret }.forEach { NoteStore.deleteForever(ctx, it.id) }
+        SecretCrypto.keyOverride = javax.crypto.KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
+        AppLock.availableOverride = true
+        AppLock.promptOverride = { _, _ -> } // leave secret notes locked
+    }
+
+    @org.junit.After fun tearDown() {
+        AppLock.availableOverride = null; AppLock.promptOverride = null
+        ctx.getSharedPreferences("widget", 0).edit().clear().commit()
+    }
+
+    @Test fun checklistLight() {
+        ctx.getSharedPreferences("settings", 0).edit().putString("theme", "LIGHT").commit()
+        val a = Robolectric.buildActivity(EditNoteActivity::class.java,
+            Intent(ctx, EditNoteActivity::class.java).putExtra(EditNoteActivity.EXTRA_NOTE_ID, 6L)).setup().get()
+        snap(a, "15-checklist")
+    }
+
+    @Test fun secretLocked() {
+        val secret = NoteStore.upsert(ctx, Note(0L, "Bank PIN hint", "never shown", System.currentTimeMillis(), secret = true))
+        val a = Robolectric.buildActivity(EditNoteActivity::class.java,
+            Intent(ctx, EditNoteActivity::class.java).putExtra(EditNoteActivity.EXTRA_NOTE_ID, secret.id)).setup().get()
+        idle()
+        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.secret_lock).visibility)
+        assertEquals("", a.findViewById<android.widget.EditText>(R.id.title).text.toString())
+        snap(a, "16-secret-locked")
+        // The list shows it as "Secret note" with no preview.
+        val m = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        snap(m, "16b-secret-in-list")
+        NoteStore.deleteForever(ctx, secret.id)
+    }
+
+    @Test fun statsOldSchool() {
+        Stats.recordActiveDay(ctx); Stats.recordActiveDay(ctx, System.currentTimeMillis() - 86_400_000L)
+        val a = Robolectric.buildActivity(StatsActivity::class.java).setup().get()
+        snap(a, "17-stats-oldschool")
+    }
+
+    @Test fun widgetConfigure() {
+        com.josh.notes.widget.WidgetOptions.set(ctx, 7, com.josh.notes.widget.WidgetOptions(com.josh.notes.widget.WidgetOptions.Mode.CHECKLIST, noteId = 6L))
+        val a = Robolectric.buildActivity(com.josh.notes.widget.WidgetConfigActivity::class.java,
+            Intent().putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, 7)).setup().get()
+        snap(a, "18-widget-configure")
+    }
+
+    @Test fun widgetChecklistOldSchool() {
+        com.josh.notes.widget.WidgetOptions.set(ctx, 9, com.josh.notes.widget.WidgetOptions(com.josh.notes.widget.WidgetOptions.Mode.CHECKLIST, noteId = 6L))
+        renderWidget("OLDSCHOOL", "19-widget-checklist-oldschool", widgetId = 9)
+        renderQuick("OLDSCHOOL", "20-widget-quick-oldschool")
+        renderQuick("DARK", "21-widget-quick-dark")
+    }
+
+    private fun renderQuick(theme: String, name: String) {
+        ctx.getSharedPreferences("settings", 0).edit().putString("theme", theme).commit()
+        val c = android.view.ContextThemeWrapper(ctx, R.style.Theme_JoshNotes)
+        val dm = ctx.resources.displayMetrics
+        val w = (170 * dm.density).toInt(); val h = (170 * dm.density).toInt()
+        val frame = android.widget.FrameLayout(c).apply { setBackgroundColor(0xFF5C7F9E.toInt()); setPadding(40, 40, 40, 40) }
+        com.josh.notes.widget.WidgetTheme.saveWidth(ctx, 0, 170)
+        val root = com.josh.notes.widget.QuickWidgetProvider.buildViews(ctx, 0).apply(c, frame)
+        frame.addView(root, android.widget.FrameLayout.LayoutParams(w, h))
+        frame.measure(View.MeasureSpec.makeMeasureSpec(w + 80, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h + 80, View.MeasureSpec.EXACTLY))
+        frame.layout(0, 0, w + 80, h + 80)
+        snapView(frame, name)
     }
 
     private fun idle() { repeat(5) { shadowOf(Looper.getMainLooper()).idle() } }
@@ -108,7 +175,7 @@ class ScreenshotTest {
     }
 
     /** [from] = theme the widget showed before; the new look is then *re-applied* onto it, like a launcher does. */
-    private fun renderWidget(theme: String, name: String, from: String? = null) {
+    private fun renderWidget(theme: String, name: String, from: String? = null, widgetId: Int = 0) {
         val c = android.view.ContextThemeWrapper(ctx, R.style.Theme_JoshNotes)
         val dm = ctx.resources.displayMetrics
         val w = (300 * dm.density).toInt(); val h = (380 * dm.density).toInt()
@@ -117,18 +184,18 @@ class ScreenshotTest {
         val prefs = ctx.getSharedPreferences("settings", 0)
         val root = if (from != null) {
             prefs.edit().putString("theme", from).commit()
-            val old = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, 0, withList = false).apply(c, frame)
+            val old = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, widgetId, withList = false).apply(c, frame)
             prefs.edit().putString("theme", theme).commit()
-            val rv = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, 0, withList = false)
+            val rv = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, widgetId, withList = false)
             assertEquals(R.layout.widget_frame, rv.layoutId)
             rv.reapply(c, old); old
         } else {
             prefs.edit().putString("theme", theme).commit()
-            com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, 0, withList = false).apply(c, frame)
+            com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, widgetId, withList = false).apply(c, frame)
         }
         frame.addView(root, android.widget.FrameLayout.LayoutParams(w, h))
         val list = root.findViewById<android.widget.ListView>(R.id.widget_list)
-        val f = com.josh.notes.widget.NotesWidgetService.Factory(ctx).apply { onDataSetChanged() }
+        val f = com.josh.notes.widget.NotesWidgetService.Factory(ctx, widgetId).apply { onDataSetChanged() }
         root.findViewById<View>(R.id.widget_empty).visibility = View.GONE
         list.adapter = object : android.widget.BaseAdapter() {
             override fun getCount() = f.count

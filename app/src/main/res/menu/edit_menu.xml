@@ -12,6 +12,10 @@
         app:showAsAction="ifRoom" />
     <item android:id="@+id/action_checklist" android:title="@string/to_checklist" android:icon="@drawable/ic_checklist"
         app:showAsAction="never" />
+    <item android:id="@+id/action_quest" android:title="@string/mark_quest" android:checkable="true"
+        android:visible="false" app:showAsAction="never" />
+    <item android:id="@+id/action_secret" android:title="@string/make_secret" android:icon="@drawable/ic_lock"
+        app:showAsAction="never" />
     <item android:id="@+id/action_share" android:title="@string/share" android:icon="@drawable/ic_share"
         app:showAsAction="never" />
     <item android:id="@+id/action_archive" android:title="@string/archive" android:icon="@drawable/ic_archive"

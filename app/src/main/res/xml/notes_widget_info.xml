@@ -11,4 +11,6 @@
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/widget_notes"
     android:previewLayout="@layout/widget_notes"
+    android:configure="com.josh.notes.widget.WidgetConfigActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional"
     android:description="@string/widget_description" />

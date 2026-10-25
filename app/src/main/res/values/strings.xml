@@ -71,4 +71,15 @@
     <string name="gdrive_connect">Back up to Google Drive…</string>
     <string name="gdrive_disconnect">Disconnect Google Drive</string>
     <string name="gdrive_help">Backups go to a private app folder in your Google Drive (hidden in the Drive app; only Josh Notes can see it). Same zip as folder backups, last 10 kept. You can use this, a folder, or both.</string>
+    <string name="reorder_item">Drag to reorder</string>
+    <string name="secret_note">Secret note</string>
+    <string name="secret_unlock_hint">Use your fingerprint or screen lock to open it.</string>
+    <string name="make_secret">Make secret</string>
+    <string name="remove_secret">Remove secret</string>
+    <string name="mark_quest">Quest</string>
+    <string name="stats">Stats</string>
+    <string name="tile_new_note">New note</string>
+    <string name="tile_dictate">Dictate note</string>
+    <string name="quick_widget_description">Quick add and your last note</string>
+    <string name="widget_config_title">Widget options</string>
 </resources>

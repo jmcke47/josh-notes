@@ -57,6 +57,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Old School: XP drops and level-up banners for ticked items and completed reminders" />
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:saveEnabled="false"
+                android:id="@+id/sounds"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Level-up and quest-complete sounds" />
             <TextView
                 android:id="@+id/font_credit"
                 android:layout_width="wrap_content"
@@ -195,6 +201,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp" />
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/volume_silent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:saveEnabled="false"
+                android:text="Volume keys don't change volume while using the shortcut" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="While Josh Notes is open, holding a volume key starts dictation without moving the volume. A quick press still changes the volume by one step."
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
             <TextView
                 style="@style/SettingsHeader"

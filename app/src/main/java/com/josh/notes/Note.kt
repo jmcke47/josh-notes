@@ -49,6 +49,11 @@ data class Note(
     val repeat: Repeat = Repeat.NONE,
     val snoozeAt: Long = 0L,         // pending snooze alarm (doesn't change the series)
     val attachments: List<Attachment> = emptyList(),
+    /** Secret note: content (title, body, items, attachment names/transcripts) lives only in [enc] (Keystore AES-GCM). */
+    val secret: Boolean = false,
+    val enc: String = "",
+    /** Checklist marked as a quest: finishing it shows the "Quest complete!" scroll. */
+    val quest: Boolean = false,
 ) {
     val hasImages get() = attachments.any { it.isImage }
     val hasAudio get() = attachments.any { it.isAudio }
@@ -57,19 +62,29 @@ data class Note(
     val hasReminder: Boolean get() = reminderAt > 0
 
     val displayTitle: String
-        get() = title.ifBlank {
+        get() = if (secret) SECRET_TITLE else title.ifBlank {
             (if (checklist) items.firstOrNull { it.text.isNotBlank() }?.text
             else body.lineSequence().firstOrNull { it.isNotBlank() })?.trim() ?: ""
         }
 
     /** Plain-text preview / share text of the content. */
     val contentText: String
-        get() = if (checklist) items.joinToString("\n") { (if (it.checked) "☑ " else "☐ ") + it.text } else body
+        get() = if (secret) "" else if (checklist) items.joinToString("\n") { (if (it.checked) "☑ " else "☐ ") + it.text } else body
 
     val isEmpty: Boolean
-        get() = title.isBlank() && body.isBlank() && items.all { it.text.isBlank() } && attachments.isEmpty()
+        get() = !(secret && enc.isNotEmpty()) && title.isBlank() && body.isBlank() && items.all { it.text.isBlank() } && attachments.isEmpty()
 
-    fun shareText(): String = listOf(title.trim(), contentText.trim()).filter { it.isNotEmpty() }.joinToString("\n\n")
+    /** Non-blank checklist items: (done, total). */
+    val progress: Pair<Int, Int>
+        get() = items.filter { it.text.isNotBlank() }.let { l -> l.count { it.checked } to l.size }
+    val isComplete: Boolean get() = checklist && progress.let { (d, t) -> t > 0 && d == t }
+
+    /** #hashtags in the note (lower-case, without '#'); none for secret notes. */
+    val tags: Set<String>
+        get() = if (secret) emptySet() else TAG_RE.findAll(title + "\n" + body + "\n" + items.joinToString("\n") { it.text })
+            .map { it.groupValues[1].lowercase() }.toSet()
+
+    fun shareText(): String = if (secret) "" else listOf(title.trim(), contentText.trim()).filter { it.isNotEmpty() }.joinToString("\n\n")
 
     fun toJson(): JSONObject = JSONObject()
         .put("id", id).put("title", title).put("body", body)
@@ -78,12 +93,16 @@ data class Note(
         .put("checklist", checklist)
         .put("reminderAt", reminderAt).put("reminderFired", reminderFired).put("deletedAt", deletedAt)
         .put("repeat", repeat.toJson()).put("snoozeAt", snoozeAt)
+        .put("secret", secret).put("enc", enc).put("quest", quest)
         .put("attachments", JSONArray().apply { attachments.forEach { put(it.toJson()) } })
         .put("items", JSONArray().apply {
             items.forEach { put(JSONObject().put("text", it.text).put("checked", it.checked)) }
         })
 
     companion object {
+        const val SECRET_TITLE = "Secret note"
+        private val TAG_RE = Regex("(?<![\\w#&])#([\\p{L}\\p{N}_-]{1,40})")
+
         /** Tolerant parser: accepts v1 notes (id/title/body/updatedAt only) and v2 notes. */
         fun fromJson(o: JSONObject): Note {
             val updated = o.optLong("updatedAt", 0L).takeIf { it > 0 } ?: o.optLong("id", System.currentTimeMillis())
@@ -111,6 +130,9 @@ data class Note(
                 deletedAt = o.optLong("deletedAt", 0L).coerceAtLeast(0L),
                 repeat = o.optJSONObject("repeat")?.let { Repeat.fromJson(it) } ?: Repeat.NONE,
                 snoozeAt = o.optLong("snoozeAt", 0L).coerceAtLeast(0L),
+                secret = o.optBoolean("secret"),
+                enc = o.optString("enc"),
+                quest = o.optBoolean("quest"),
                 attachments = buildList {
                     val arr = o.optJSONArray("attachments")
                     if (arr != null) for (i in 0 until arr.length()) {

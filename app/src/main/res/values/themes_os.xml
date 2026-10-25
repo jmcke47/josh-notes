@@ -476,4 +476,11 @@
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
     </style>
+    <style name="Theme.JoshNotes.OldSchool.Translucent" parent="Theme.JoshNotes.OldSchool">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

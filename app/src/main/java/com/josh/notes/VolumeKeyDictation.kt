@@ -22,13 +22,37 @@ enum class DictationTrigger(val label: String) {
 }
 
 /**
- * Volume-key dictation trigger while the app is in the foreground.
- * Intercepted keys still change volume on a short press (re-dispatched to AudioManager on key-up).
- * Keys not used by the current trigger are left completely untouched.
+ * Volume-key dictation shortcut while the app is in the foreground (fed from [LockableActivity.dispatchKeyEvent]).
+ *
+ * With "Volume keys don't change volume while using the shortcut" on (default), every down/repeat/up event of the
+ * keys the shortcut uses is consumed, so holding a key never nudges the volume. The long-press is detected by our
+ * own timer; if the key is released before that (a normal short press), exactly one volume step is applied then via
+ * AudioManager, so ordinary volume control keeps working. With the setting off the keys behave as usual (volume
+ * changes) and a long-press still starts dictation.
  */
-class VolumeKeyDictation(private val context: Context, private val onTrigger: () -> Unit) {
+class VolumeKeyDictation(
+    private val context: Context,
+    private val adjust: (Int) -> Unit,
+    private val onTrigger: () -> Unit,
+) {
+    constructor(context: Context, onTrigger: () -> Unit) : this(context, adjust = defaultAdjust(context), onTrigger = onTrigger)
+
+    companion object {
+        const val LONG_PRESS_MS = 500L
+        private fun defaultAdjust(context: Context): (Int) -> Unit = { dir ->
+            (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+                .adjustSuggestedStreamVolume(dir, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI)
+        }
+        fun silentKeys(ctx: Context) = ctx.getSharedPreferences("settings", 0).getBoolean("volume_keys_silent", true)
+        fun setSilentKeys(ctx: Context, on: Boolean) = ctx.getSharedPreferences("settings", 0).edit().putBoolean("volume_keys_silent", on).apply()
+    }
+
     private var fired = false
-    private val held = mutableSetOf<Int>()
+    private val held = mutableMapOf<Int, Long>()   // keyCode -> downTime
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val longPress = Runnable { if (held.isNotEmpty() && !fired && DictationTrigger.get(context) != DictationTrigger.BOTH) fire() }
+
+    private fun fire() { fired = true; handler.removeCallbacks(longPress); onTrigger() }
 
     private fun intercepts(code: Int): Boolean = when (DictationTrigger.get(context)) {
         DictationTrigger.EITHER, DictationTrigger.BOTH ->
@@ -38,38 +62,31 @@ class VolumeKeyDictation(private val context: Context, private val onTrigger: ()
         DictationTrigger.OFF -> false
     }
 
-    /** Returns true if consumed. */
-    fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (!intercepts(keyCode)) return false
-        if (event.repeatCount == 0) {
-            if (held.isEmpty()) fired = false
-            held += keyCode
-            event.startTracking()
-            if (DictationTrigger.get(context) == DictationTrigger.BOTH && held.size == 2 && !fired) {
-                fired = true; onTrigger()
+    /** Returns true if the event was consumed (the system must not change the volume for it). */
+    fun handle(event: KeyEvent): Boolean {
+        val code = event.keyCode
+        if (!intercepts(code)) return false
+        val silent = silentKeys(context)
+        val both = DictationTrigger.get(context) == DictationTrigger.BOTH
+        when (event.action) {
+            KeyEvent.ACTION_DOWN -> {
+                if (event.repeatCount == 0) {
+                    if (held.isEmpty()) fired = false
+                    held[code] = event.downTime
+                    if (both && held.size == 2 && !fired) fire()
+                    else if (!both) { handler.removeCallbacks(longPress); handler.postDelayed(longPress, LONG_PRESS_MS) }
+                } else if (!fired && !both && event.eventTime - event.downTime >= LONG_PRESS_MS) fire()
+            }
+            KeyEvent.ACTION_UP -> {
+                val wasHeld = held.remove(code) != null
+                if (held.isEmpty()) handler.removeCallbacks(longPress)
+                // A short press with the volume held back: apply the one step it would have made.
+                if (silent && wasHeld && !fired && !event.isCanceled)
+                    adjust(if (code == KeyEvent.KEYCODE_VOLUME_UP) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER)
+                if (held.isEmpty()) fired = false
             }
         }
-        return true
-    }
-
-    fun onKeyLongPress(keyCode: Int): Boolean {
-        if (!intercepts(keyCode)) return false
-        if (DictationTrigger.get(context) != DictationTrigger.BOTH && !fired) { fired = true; onTrigger() }
-        return true
-    }
-
-    fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        if (!intercepts(keyCode)) return false
-        held -= keyCode
-        if (!fired && !event.isCanceled) {
-            val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            am.adjustSuggestedStreamVolume(
-                if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER,
-                AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI
-            )
-        }
-        if (held.isEmpty()) fired = false
-        return true
+        return silent
     }
 }
 

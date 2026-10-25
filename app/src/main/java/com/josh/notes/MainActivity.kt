@@ -126,12 +126,7 @@ class MainActivity : LockableActivity() {
         outState.putString("mode", mode.name)
     }
 
-    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent) =
-        volumeKeys.onKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
-    override fun onKeyLongPress(keyCode: Int, event: android.view.KeyEvent) =
-        volumeKeys.onKeyLongPress(keyCode) || super.onKeyLongPress(keyCode, event)
-    override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent) =
-        volumeKeys.onKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
+    override val volumeShortcut get() = volumeKeys
 
     override fun onUnlocked() = refresh()
 
@@ -231,6 +226,8 @@ class MainActivity : LockableActivity() {
         refresh()
         updateController.onResume()
         Levels.consumePendingLevel(this).takeIf { it > 0 }?.let { lvl -> root.post { Levels.levelUp(this, lvl) } }
+        // A quest finished from the widget: show its scroll now.
+        Quests.consumePending(this).takeIf { it != 0L }?.let { id -> NoteStore.get(this, id)?.let { n -> root.post { Quests.completed(this, n) } } }
     }
 
     private fun setupMenu() {
@@ -261,6 +258,7 @@ class MainActivity : LockableActivity() {
                         SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date()) + ".json")
                 R.id.action_import -> importLauncher.launch(arrayOf("application/json", "text/*", "application/octet-stream"))
                 R.id.action_settings -> startActivity(Intent(this, SettingsActivity::class.java))
+                R.id.action_stats -> startActivity(Intent(this, StatsActivity::class.java))
                 R.id.action_check_updates -> updateController.checkForUpdates()
                 R.id.action_about -> showAbout()
                 else -> return@setOnMenuItemClickListener false
@@ -415,7 +413,7 @@ class MainActivity : LockableActivity() {
             val color = NoteColors.palette[n.color]
             h.strip.visibility = if (n.color == 0) View.GONE else View.VISIBLE
             h.strip.setBackgroundColor(color)
-            h.memo.visibility = if (n.hasAudio) View.VISIBLE else View.GONE
+            h.memo.visibility = if (n.hasAudio && !n.secret) View.VISIBLE else View.GONE
             // Old School: red "hitsplat" with days overdue.
             h.hitsplat?.let { hs ->
                 val now = System.currentTimeMillis()
@@ -427,8 +425,8 @@ class MainActivity : LockableActivity() {
                 h.title.text = h.title.text.toString() + ":"
                 h.bell.visibility = if (n.hasReminder && !n.inTrash && n.reminderAt > System.currentTimeMillis()) View.VISIBLE else View.GONE
             }
-            h.clip.visibility = if (n.hasFiles || (n.hasImages && n.inTrash)) View.VISIBLE else View.GONE
-            val img = n.attachments.firstOrNull { it.kind == "image" }
+            h.clip.visibility = if (n.secret) View.GONE else if (n.hasFiles || (n.hasImages && n.inTrash)) View.VISIBLE else View.GONE
+            val img = if (n.secret) null else n.attachments.firstOrNull { it.kind == "image" }
             h.thumb.tag = img?.id
             h.thumb.setImageDrawable(null)
             h.thumb.visibility = if (img != null) View.VISIBLE else View.GONE

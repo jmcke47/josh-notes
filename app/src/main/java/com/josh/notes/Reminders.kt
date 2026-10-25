@@ -110,7 +110,7 @@ object Reminders {
         fun action(a: String, req: Int) = PendingIntent.getBroadcast(ctx, id.hashCode() * 31 + req,
             Intent(ctx, ReminderReceiver::class.java).setAction(a).putExtra(EXTRA_ID, id),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val locked = AppLock.enabled(ctx)
+        val locked = AppLock.enabled(ctx) || n.secret
         val title = n.displayTitle.ifBlank { ctx.getString(R.string.untitled) }
         val text = if (locked) "Tap to open" else n.contentText.trim().take(300)
         val notif = NotificationCompat.Builder(ctx, CHANNEL)

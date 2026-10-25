@@ -155,6 +155,7 @@ object Levels {
         root.addView(overlay, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         overlay.alpha = 0f; overlay.animate().alpha(1f).setDuration(150).start()
         fireworks.start()
+        SoundFx.play(a, SoundFx.Kind.LEVEL_UP)
         lastFireworks = fireworks
         overlay.postDelayed({ dismiss() }, 8000)
     }

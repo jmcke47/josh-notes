@@ -100,7 +100,10 @@ object NoteStore {
     private fun newId(list: List<Note>): Long = maxOf(System.currentTimeMillis(), (list.maxOfOrNull { it.id } ?: 0L) + 1)
 
     /** Insert (note.id == 0) or replace by id. Returns the stored note. */
-    fun upsert(ctx: Context, note: Note, touch: Boolean = true): Note {
+    fun upsert(ctx: Context, note0: Note, touch: Boolean = true): Note {
+        // Secret notes are encrypted before they ever reach the file.
+        val note = SecretNotes.seal(note0)
+        if (touch) Stats.recordActiveDay(ctx)
         val saved = synchronized(lock) {
             val list = load(ctx)
             val now = System.currentTimeMillis()
@@ -158,7 +161,8 @@ object NoteStore {
     /** Put a previously deleted note back exactly as it was (Undo). */
     fun restore(ctx: Context, note: Note) = upsert(ctx, note, touch = false)
 
-    fun exportJson(ctx: Context): String = synchronized(lock) { serialize(load(ctx)) }
+    /** Plain JSON export: secret notes are left out. */
+    fun exportJson(ctx: Context): String = synchronized(lock) { serialize(load(ctx).filter { !it.secret }) }
 
     /** Merge: same id -> keep the newer edit; new ids added. Returns ids taken from [incoming]. */
     fun mergeIncoming(ctx: Context, incoming: List<Note>): Set<Long> {
@@ -180,16 +184,24 @@ object NoteStore {
         return taken
     }
 
-    /** Replace every note (restore-replace). Caller must have made a safety backup first. */
-    fun replaceAll(ctx: Context, notes: List<Note>) {
+    /**
+     * Replace every note (restore-replace). Caller must have made a safety backup first.
+     * Secret notes that aren't in [notes] (plain backups never contain them) are kept. Returns their ids.
+     */
+    fun replaceAll(ctx: Context, notes: List<Note>): Set<Long> {
+        val kept: Set<Long>
         synchronized(lock) {
             val list = load(ctx)
             list.forEach { Reminders.cancel(ctx, it.id) }
-            list.clear(); list += notes
+            val incoming = notes.map { it.id }.toSet()
+            val keep = list.filter { it.secret && it.id !in incoming }
+            kept = keep.map { it.id }.toSet()
+            list.clear(); list += notes; list += keep
             persist(ctx, list)
         }
         Reminders.rescheduleAll(ctx)
         changed(ctx)
+        return kept
     }
 
     fun maxUpdatedAt(ctx: Context): Long = all(ctx).maxOfOrNull { maxOf(it.updatedAt, it.deletedAt) } ?: 0L

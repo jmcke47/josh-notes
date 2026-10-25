@@ -266,6 +266,14 @@ class SettingsActivity : LockableActivity() {
             isChecked = AppSettings.levelUps(this@SettingsActivity)
             setOnCheckedChangeListener { _, on -> AppSettings.setLevelUps(this@SettingsActivity, on) }
         }
+        findViewById<MaterialSwitch>(R.id.sounds).apply {
+            isSaveEnabled = false
+            isChecked = SoundFx.enabled(this@SettingsActivity)
+            setOnCheckedChangeListener { _, on ->
+                SoundFx.setEnabled(this@SettingsActivity, on)
+                if (on) SoundFx.play(this@SettingsActivity, SoundFx.Kind.LEVEL_UP) // preview
+            }
+        }
         findViewById<View>(R.id.font_credit).setOnClickListener {
             val text = runCatching { assets.open("licenses/PixelifySans-OFL.txt").bufferedReader().readText() }.getOrDefault("")
             osDialog(this).setTitle("Pixelify Sans — SIL OFL 1.1")
@@ -307,6 +315,11 @@ class SettingsActivity : LockableActivity() {
                 id = View.generateViewId(); text = t.label; isChecked = t == current
                 setOnClickListener { DictationTrigger.set(this@SettingsActivity, t) }
             })
+        }
+        findViewById<MaterialSwitch>(R.id.volume_silent).apply {
+            isSaveEnabled = false
+            isChecked = VolumeKeyDictation.silentKeys(this@SettingsActivity)
+            setOnCheckedChangeListener { _, on -> VolumeKeyDictation.setSilentKeys(this@SettingsActivity, on) }
         }
 
         // Advanced (hidden-ish): update source URL

@@ -36,8 +36,12 @@ object AppLock {
         NotesWidgetProvider.refreshAll(ctx)
     }
 
-    fun available(ctx: Context) =
-        BiometricManager.from(ctx).canAuthenticate(AUTHENTICATORS) == BiometricManager.BIOMETRIC_SUCCESS
+    /** Test hooks (Robolectric has no biometric stack). */
+    @androidx.annotation.VisibleForTesting @JvmStatic var availableOverride: Boolean? = null
+    @androidx.annotation.VisibleForTesting @JvmStatic var promptOverride: ((onSuccess: () -> Unit, onFail: () -> Unit) -> Unit)? = null
+
+    fun available(ctx: Context) = availableOverride
+        ?: (BiometricManager.from(ctx).canAuthenticate(AUTHENTICATORS) == BiometricManager.BIOMETRIC_SUCCESS)
 
     fun needsUnlock(ctx: Context) = enabled(ctx) && !unlocked
 
@@ -54,6 +58,7 @@ object AppLock {
     }
 
     fun prompt(activity: AppCompatActivity, title: String, onSuccess: () -> Unit, onFail: () -> Unit = {}) {
+        promptOverride?.let { it(onSuccess, onFail); return }
         val p = BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { onSuccess() }
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { onFail() }
@@ -86,6 +91,15 @@ open class LockableActivity : AppCompatActivity() {
     }
 
     private var appliedTheme: String? = null
+
+    /** Volume-key dictation shortcut for this screen (null = keys untouched). */
+    open val volumeShortcut: VolumeKeyDictation? get() = null
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        // Before views/IME and before the system's volume handling: consume the shortcut keys' down/repeat/up.
+        if (volumeShortcut?.handle(event) == true) return true
+        return super.dispatchKeyEvent(event)
+    }
 
     companion object {
         /** Test hook: number of LockableActivity creations (used to assert a theme switch recreates exactly once). */

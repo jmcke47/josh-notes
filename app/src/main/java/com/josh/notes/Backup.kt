@@ -118,7 +118,7 @@ object Backup {
         val name = PREFIX + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".zip"
         val tmp = File(ctx.cacheDir, name)
         try {
-            val count = writeArchive(ctx, tmp)
+            val count = writeArchive(ctx, tmp, includeSecret = false)
             val doc = dir.createFile("application/zip", name) ?: throw IllegalStateException("Couldn't create a file in the backup folder (provider offline?)")
             ctx.contentResolver.openOutputStream(doc.uri, "w")?.use { out -> tmp.inputStream().use { it.copyTo(out) } }
                 ?: throw IllegalStateException("Couldn't write to the backup folder")
@@ -133,9 +133,13 @@ object Backup {
         } finally { tmp.delete() }
     }
 
-    /** Writes a full archive to [out]. Returns the note count. Also used for local safety copies. */
-    fun writeArchive(ctx: Context, out: File): Int {
-        val notes = NoteStore.all(ctx)
+    /**
+     * Writes a full archive to [out]. Returns the note count. Also used for local safety copies.
+     * [includeSecret] = false (folder backups): secret notes and their files are left out; Drive/safety copies keep
+     * them, still encrypted.
+     */
+    fun writeArchive(ctx: Context, out: File, includeSecret: Boolean = true): Int {
+        val notes = NoteStore.all(ctx).filter { includeSecret || !it.secret }
         ZipOutputStream(out.outputStream().buffered()).use { z ->
             val meta = JSONObject().put("format", 1).put("app", "com.josh.notes")
                 .put("appVersion", BuildConfig.VERSION_NAME).put("createdAt", System.currentTimeMillis())
@@ -228,8 +232,8 @@ object Backup {
         val parsed = read(ctx, uri)
         try {
             safetyCopy(ctx)
-            NoteStore.replaceAll(ctx, parsed.notes)
-            Attachments.root(ctx).deleteRecursively()
+            val kept = NoteStore.replaceAll(ctx, parsed.notes).map { it.toString() }.toSet()
+            Attachments.root(ctx).listFiles()?.filter { it.name !in kept }?.forEach { it.deleteRecursively() }
             copyAttachmentsFor(ctx, parsed, parsed.notes.map { it.id })
             return parsed.notes.size
         } finally { parsed.dir.deleteRecursively() }

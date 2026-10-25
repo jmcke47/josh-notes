@@ -47,6 +47,14 @@ class EditNoteActivity : LockableActivity() {
     private lateinit var panel: AttachmentsPanel
     private var lastEdited = 0L
     private var viewMode = false
+    private var secret = false
+    private var quest = false
+    /** Secret note whose content hasn't been decrypted yet: nothing is shown and nothing may be saved. */
+    private var secretLocked = false
+    private var secretPrompting = false
+    private var secretAutoPrompted = false
+    private var stoppedAt = 0L
+    private var completionCounted = false
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var titleEt: EditText
@@ -143,7 +151,7 @@ class EditNoteActivity : LockableActivity() {
         val note = noteId.takeIf { it != 0L }?.let { NoteStore.get(this, it) }
         if (note == null) noteId = 0L
 
-        if (savedInstanceState != null && savedInstanceState.containsKey("checklist")) {
+        if (savedInstanceState != null && savedInstanceState.containsKey("checklist") && note?.secret != true) {
             // Rebuild from instance state (rotation etc.).
             pinned = savedInstanceState.getBoolean("pinned"); color = savedInstanceState.getInt("color")
             archived = savedInstanceState.getBoolean("archived"); checklist = savedInstanceState.getBoolean("checklist")
@@ -155,22 +163,24 @@ class EditNoteActivity : LockableActivity() {
             val texts = savedInstanceState.getStringArrayList("itemTexts") ?: arrayListOf()
             val checks = savedInstanceState.getBooleanArray("itemChecks") ?: BooleanArray(0)
             setChecklistItems(texts.mapIndexed { i, t -> CheckItem(t, checks.getOrElse(i) { false }) })
+        } else if (note != null && note.secret) {
+            // Secret: metadata only until the user authenticates (content stays encrypted).
+            loadMeta(note); secret = true
+            if (SecretNotes.inGrace(note.id)) unlockSecret(fromGrace = true) else lockSecretUi()
         } else if (note != null) {
-            titleEt.setText(note.title); bodyEt.setText(note.body)
-            pinned = note.pinned; color = note.color; archived = note.archived
-            checklist = note.checklist; createdAt = note.createdAt
-            reminderAt = note.reminderAt; reminderFired = note.reminderFired; lastEdited = note.updatedAt
-            repeatRule = note.repeat; attachments = note.attachments
-            setChecklistItems(note.items)
+            populate(note)
         } else {
             intent.getStringExtra(EXTRA_TITLE)?.let { titleEt.setText(it) }
             intent.getStringExtra(EXTRA_BODY)?.let { bodyEt.setText(it) }
             titleEt.requestFocus()
         }
+        findViewById<View>(R.id.secret_unlock).setOnClickListener { requestSecretUnlock() }
+        if (AppSettings.oldSchool(this)) findViewById<android.widget.TextView>(R.id.secret_lock_title).setTextColor(getColor(R.color.os_orange))
+        applySecure()
         applyChecklistMode()
-        updateMenu(); updateColor(); updateReminderChip(); panel.render()
+        updateMenu(); updateColor(); updateReminderChip(); if (!secretLocked) panel.render()
         val wantsDictation0 = intent.getBooleanExtra(EXTRA_DICTATE, false) || intent.action == ACTION_DICTATE
-        if (savedInstanceState == null && note != null && !note.checklist && note.body.isNotBlank() && !wantsDictation0) enterView()
+        if (savedInstanceState == null && note != null && !secret && !note.checklist && note.body.isNotBlank() && !wantsDictation0) enterView()
         updateFooter()
 
         toolbar.setNavigationOnClickListener { finish() }
@@ -183,6 +193,9 @@ class EditNoteActivity : LockableActivity() {
                     Snackbar.make(toolbar, if (pinned) "Pinned" else "Unpinned", Snackbar.LENGTH_SHORT).show() }
                 R.id.action_color -> pickColor()
                 R.id.action_checklist -> toggleChecklist()
+                R.id.action_secret -> toggleSecret()
+                R.id.action_quest -> { quest = !quest; updateMenu(); save()
+                    Snackbar.make(toolbar, if (quest) "Quest: finish every item to complete it" else "No longer a quest", Snackbar.LENGTH_SHORT).show() }
                 R.id.action_share -> share()
                 R.id.action_archive -> { archived = !archived; save(); finish() }
                 R.id.action_delete -> confirmDelete()
@@ -195,16 +208,141 @@ class EditNoteActivity : LockableActivity() {
                 (intent.getBooleanExtra(EXTRA_DICTATE, false) || intent.action == ACTION_DICTATE)
         if (wantsDictation) {
             (if (checklist) null else bodyEt)?.requestFocus()
-            if (AppLock.needsUnlock(this)) dictateAfterUnlock = true else bodyEt.post { voiceAction() }
+            if (AppLock.needsUnlock(this) || secretLocked) dictateAfterUnlock = true else bodyEt.post { voiceAction() }
         }
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent) = volumeKeys.onKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
-    override fun onKeyLongPress(keyCode: Int, event: KeyEvent) = volumeKeys.onKeyLongPress(keyCode) || super.onKeyLongPress(keyCode, event)
-    override fun onKeyUp(keyCode: Int, event: KeyEvent) = volumeKeys.onKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
+    override val volumeShortcut get() = volumeKeys
 
     private var dictateAfterUnlock = false
-    override fun onUnlocked() { if (dictateAfterUnlock) { dictateAfterUnlock = false; bodyEt.post { voiceAction() } } }
+    override fun onUnlocked() {
+        // The user just authenticated for the app lock: that also opens a secret note.
+        if (secretLocked) { unlockSecret(); return }
+        if (dictateAfterUnlock) { dictateAfterUnlock = false; bodyEt.post { voiceAction() } }
+    }
+
+    // ---------------------------------------------------------------- secret notes
+
+    private fun loadMeta(note: Note) {
+        pinned = note.pinned; color = note.color; archived = note.archived
+        checklist = note.checklist; createdAt = note.createdAt
+        reminderAt = note.reminderAt; reminderFired = note.reminderFired; lastEdited = note.updatedAt
+        repeatRule = note.repeat; attachments = note.attachments
+        secret = note.secret; quest = note.quest
+    }
+
+    private fun populate(note: Note) {
+        loadMeta(note)
+        titleEt.setText(note.title); bodyEt.setText(note.body)
+        setChecklistItems(note.items)
+        completionCounted = note.isComplete
+    }
+
+    /** FLAG_SECURE (no screenshots / blank recents thumbnail) and no plaintext in saved instance state. */
+    private fun applySecure() {
+        if (secret) window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        titleEt.isSaveEnabled = !secret; bodyEt.isSaveEnabled = !secret
+    }
+
+    private fun lockSecretUi(message: String? = null) {
+        secretLocked = true
+        secretAutoPrompted = false
+        titleEt.setText(""); bodyEt.setText(""); listBox.removeAllViews(); bodyView.text = ""
+        findViewById<View>(R.id.paper).visibility = View.GONE
+        findViewById<View>(R.id.secret_lock).visibility = View.VISIBLE
+        findViewById<android.widget.TextView>(R.id.secret_lock_text).text = message ?: getString(R.string.secret_unlock_hint)
+        findViewById<View>(R.id.attachments_box).let { (it as? android.view.ViewGroup)?.removeAllViews() }
+        toolbar.menu.setGroupVisible(0, false)
+        for (i in 0 until toolbar.menu.size()) toolbar.menu.getItem(i).isVisible = false
+    }
+
+    private fun requestSecretUnlock() {
+        if (secretPrompting) return
+        if (!AppLock.available(this)) {
+            // Secret notes always need a fingerprint or screen lock; never open without one.
+            osDialog(this).setTitle("Screen lock needed")
+                .setMessage("Secret notes open with your fingerprint or screen lock. Set one up in Android Settings › Security.")
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Open settings") { _, _ ->
+                    runCatching { startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)) }
+                }.show()
+            return
+        }
+        secretPrompting = true
+        AppLock.prompt(this, getString(R.string.secret_note),
+            onSuccess = { secretPrompting = false; AppLock.markUnlocked(); unlockSecret() },
+            onFail = { secretPrompting = false })
+    }
+
+    private fun unlockSecret(fromGrace: Boolean = false) {
+        val stored = NoteStore.get(this, noteId) ?: return
+        runCatching { SecretNotes.open(stored) }
+            .onSuccess { plain ->
+                secretLocked = false
+                populate(plain)
+                findViewById<View>(R.id.secret_lock).visibility = View.GONE
+                findViewById<View>(R.id.paper).visibility = View.VISIBLE
+                if (!fromGrace) {
+                    for (i in 0 until toolbar.menu.size()) toolbar.menu.getItem(i).isVisible = true
+                    applyChecklistMode(); updateMenu(); panel.render(); updateFooter()
+                    if (dictateAfterUnlock) { dictateAfterUnlock = false; bodyEt.post { voiceAction() } }
+                }
+            }
+            .onFailure {
+                lockSecretUi("This secret note can't be decrypted on this device. Its key is kept in this phone's secure " +
+                    "hardware, so notes restored from another phone or a reinstall can't be opened.")
+                findViewById<View>(R.id.secret_unlock).visibility = View.GONE
+            }
+    }
+
+    private fun toggleSecret() {
+        if (!secret) {
+            if (!AppLock.available(this)) {
+                osDialog(this).setTitle("Set up a screen lock first")
+                    .setMessage("Secret notes open with your fingerprint or screen lock (PIN, pattern or password). Add one in Android Settings › Security, then try again.")
+                    .setPositiveButton(android.R.string.ok, null).show(); return
+            }
+            if (!SecretCrypto.works()) {
+                osDialog(this).setTitle("Can't make it secret").setMessage("This phone's secure key storage isn't available.")
+                    .setPositiveButton(android.R.string.ok, null).show(); return
+            }
+            val msg = "It'll show as \"Secret note\" in the list, widget, search and notifications, and needs your fingerprint " +
+                "or screen lock to open. Its text is encrypted on this phone and left out of folder/JSON backups " +
+                "(Google Drive backups keep it encrypted; it can only be opened on this phone)." +
+                if (attachments.isNotEmpty()) "\n\nAttached files stay as private app files; their names and transcripts are encrypted." else ""
+            osDialog(this).setTitle("Make this note secret?").setMessage(msg)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.make_secret) { _, _ ->
+                    secret = true; applySecure(); save(); updateMenu()
+                    Snackbar.make(toolbar, "Secret note — encrypted", Snackbar.LENGTH_SHORT).show()
+                }.show()
+        } else {
+            osDialog(this).setTitle("Remove secret?")
+                .setMessage("The note will be stored and backed up as normal text again.")
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.remove_secret) { _, _ -> secret = false; applySecure(); save(); updateMenu() }.show()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Re-lock a secret note after 30 s away (content was saved/encrypted in onPause).
+        if (secret && !secretLocked && stoppedAt > 0 && android.os.SystemClock.elapsedRealtime() - stoppedAt > 30_000L) lockSecretUi()
+        stoppedAt = 0L
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (secret && !isChangingConfigurations) stoppedAt = android.os.SystemClock.elapsedRealtime()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (secretLocked && !secretAutoPrompted && !AppLock.needsUnlock(this) && findViewById<View>(R.id.secret_unlock).isShown) {
+            secretAutoPrompted = true; requestSecretUnlock()
+        }
+    }
 
     // ---------------------------------------------------------------- view / edit mode (tappable links)
 
@@ -415,11 +553,18 @@ class EditNoteActivity : LockableActivity() {
         strike(et, item.checked)
         cb.setOnCheckedChangeListener { _, c ->
             strike(et, c)
+            val items = currentItems().filter { it.text.isNotBlank() }
             if (c && et.text.isNotBlank()) {
-                val items = currentItems().filter { it.text.isNotBlank() }
                 val allDone = items.size >= 2 && items.all { it.checked }
                 Levels.reward(this, Levels.XP_ITEM + if (allDone) Levels.XP_CHECKLIST_DONE else 0)
             }
+            val complete = items.isNotEmpty() && items.all { it.checked }
+            if (complete && !completionCounted) {
+                completionCounted = true
+                Stats.checklistCompleted(this)
+                if (quest) { save(); Quests.completed(this, buildNote()) }
+            } else if (!complete) completionCounted = false
+            updateProgress()
         }
         et.doAfterTextChangedCompat { updateFooter() }
         trackFocus(et)
@@ -433,10 +578,53 @@ class EditNoteActivity : LockableActivity() {
         row.findViewById<ImageButton>(R.id.remove).setOnClickListener {
             if (lastFocused == et) lastFocused = null
             listBox.removeView(row)
+            updateProgress()
         }
+        attachDrag(row)
         if (index in 0..listBox.childCount) listBox.addView(row, index) else listBox.addView(row)
         if (focus) et.requestFocus()
+        updateProgress()
         return et
+    }
+
+    /** Drag handle: the row follows the finger and swaps places with the neighbour it passes. */
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    private fun attachDrag(row: View) {
+        var lastY = 0f
+        row.findViewById<View>(R.id.drag).setOnTouchListener { v, e ->
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    v.parent.requestDisallowInterceptTouchEvent(true)
+                    lastY = e.rawY; row.elevation = 8 * resources.displayMetrics.density; row.alpha = 0.92f
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    row.translationY += e.rawY - lastY; lastY = e.rawY
+                    val i = listBox.indexOfChild(row)
+                    val below = listBox.getChildAt(i + 1); val above = if (i > 0) listBox.getChildAt(i - 1) else null
+                    if (below != null && row.translationY > below.height / 2f) {
+                        listBox.removeView(below); listBox.addView(below, i); row.translationY -= below.height
+                    } else if (above != null && row.translationY < -above.height / 2f) {
+                        listBox.removeView(above); listBox.addView(above, i); row.translationY += above.height
+                    }
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    row.animate().translationY(0f).setDuration(120).start(); row.elevation = 0f; row.alpha = 1f
+                    v.parent.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            true
+        }
+    }
+
+    /** "3/7 done" bar above a checklist. */
+    private fun updateProgress() {
+        val header = findViewById<View>(R.id.checklist_header) ?: return
+        val items = currentItems().filter { it.text.isNotBlank() }
+        header.visibility = if (checklist && items.isNotEmpty()) View.VISIBLE else View.GONE
+        val done = items.count { it.checked }
+        findViewById<android.widget.TextView>(R.id.checklist_progress).text = "$done/${items.size}" + if (quest) " · Quest" else ""
+        findViewById<com.google.android.material.progressindicator.LinearProgressIndicator>(R.id.checklist_bar)
+            .setProgressCompat(if (items.isEmpty()) 0 else done * 100 / items.size, false)
     }
 
     private fun strike(et: EditText, on: Boolean) {
@@ -471,6 +659,7 @@ class EditNoteActivity : LockableActivity() {
         bodyEt.visibility = if (checklist) View.GONE else View.VISIBLE
         listBox.visibility = if (checklist) View.VISIBLE else View.GONE
         addItem.visibility = listBox.visibility
+        updateProgress()
     }
 
     // ---------------------------------------------------------------- pin / colour / share
@@ -482,6 +671,9 @@ class EditNoteActivity : LockableActivity() {
         }
         toolbar.menu.findItem(R.id.action_checklist)?.title = getString(if (checklist) R.string.to_text else R.string.to_checklist)
         toolbar.menu.findItem(R.id.action_archive)?.title = getString(if (archived) R.string.unarchive else R.string.archive)
+        toolbar.menu.findItem(R.id.action_secret)?.title = getString(if (secret) R.string.remove_secret else R.string.make_secret)
+        toolbar.menu.findItem(R.id.action_quest)?.apply { isVisible = checklist && !secretLocked; isChecked = quest }
+        if (::listBox.isInitialized) updateProgress()
     }
 
     private fun updateColor() {
@@ -523,11 +715,13 @@ class EditNoteActivity : LockableActivity() {
             reminderAt = reminderAt, reminderFired = reminderFired, repeat = repeatRule,
             snoozeAt = if (reminderChanged) 0L else base.snoozeAt,
             attachments = attachments,
+            secret = secret, quest = quest,
+            enc = "", // always re-sealed from the editor's plaintext
         )
     }
 
     private fun share() {
-        val text = buildNote().shareText()
+        val text = buildNote().copy(secret = false).shareText()
         if (text.isBlank()) return
         startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
@@ -552,16 +746,18 @@ class EditNoteActivity : LockableActivity() {
     // ---------------------------------------------------------------- save
 
     private fun save() {
-        if (deleted) return
+        if (deleted || secretLocked) return
         val n = buildNote()
-        val existing = noteId.takeIf { it != 0L }?.let { NoteStore.get(this, it) }
+        val stored = noteId.takeIf { it != 0L }?.let { NoteStore.get(this, it) }
+        // Compare against the decrypted content of a stored secret note.
+        val existing = if (stored?.secret == true) runCatching { SecretNotes.open(stored) }.getOrElse { return } else stored
         if (existing == null && n.isEmpty) return
         if (existing != null) {
             val contentSame = existing.title == n.title && existing.body == n.body && existing.items == n.items &&
-                    existing.checklist == n.checklist && existing.attachments == n.attachments
+                    existing.checklist == n.checklist && existing.attachments == n.attachments && existing.secret == n.secret
             val metaSame = existing.pinned == n.pinned && existing.color == n.color && existing.archived == n.archived &&
                     existing.reminderAt == n.reminderAt && existing.reminderFired == n.reminderFired &&
-                    existing.repeat == n.repeat && existing.snoozeAt == n.snoozeAt
+                    existing.repeat == n.repeat && existing.snoozeAt == n.snoozeAt && existing.quest == n.quest
             if (contentSame && metaSame) return
             // Only bump "edited" time when the content changed.
             noteId = NoteStore.upsert(this, n.copy(createdAt = existing.createdAt, updatedAt = existing.updatedAt,
@@ -584,6 +780,11 @@ class EditNoteActivity : LockableActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putLong(EXTRA_NOTE_ID, noteId)
+        if (secret) {
+            // Never put secret content in the instance state; reload from the (encrypted) store after rotation.
+            if (!secretLocked && noteId != 0L) SecretNotes.keepUnlocked(noteId)
+            return
+        }
         outState.putBoolean("pinned", pinned); outState.putInt("color", color)
         outState.putBoolean("archived", archived); outState.putBoolean("checklist", checklist)
         outState.putLong("createdAt", createdAt)
