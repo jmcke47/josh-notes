@@ -19,4 +19,18 @@
     <color name="os_link_ink">#B32400</color>
     <color name="os_red">#E0482E</color>
     <color name="os_green">#00FF00</color>
+    <!-- v1.0 kit additions -->
+    <color name="os_chat_blue_dark">#000080</color>
+    <color name="os_ink_brown">#5A2E0C</color>
+    <color name="os_parchment">#D6C49A</color>
+    <color name="os_menu_header_text">#5D5447</color>
+    <color name="os_menu_bg">#E6211C15</color>
+    <color name="os_answer_correct">#1E6E1E</color>
+    <color name="os_answer_wrong">#821C14</color>
+    <color name="os_bar_green">#00B000</color>
+    <color name="os_bar_red">#7F0000</color>
+    <color name="os_xp_gold">#E8B830</color>
+    <color name="os_timer_ok">#30D030</color>
+    <color name="os_timer_warn">#FFD000</color>
+    <color name="os_timer_low">#FF3020</color>
 </resources>

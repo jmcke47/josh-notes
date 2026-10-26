@@ -28,8 +28,8 @@ enum class WidgetTheme(
         R.layout.widget_check_row_light, R.drawable.ic_widget_check_on_light, R.drawable.ic_widget_check_off_light, R.drawable.widget_item_bg_light),
     DARK(R.layout.widget_item_dark, R.drawable.widget_bg_dark, R.drawable.ic_mic_widget_dark, R.drawable.ic_add_widget_dark, R.id.widget_title_dark, 0,
         R.layout.widget_check_row_dark, R.drawable.ic_widget_check_on_dark, R.drawable.ic_widget_check_off_dark, R.drawable.widget_item_bg_dark),
-    OLDSCHOOL(R.layout.widget_item_os, R.drawable.os_widget_bg, R.drawable.ic_mic_widget_os, R.drawable.ic_add_widget_os, R.id.widget_title_img, R.drawable.os_chatbox,
-        R.layout.widget_check_row_os, R.drawable.ic_os_check_on, R.drawable.ic_os_check_off, R.drawable.os_chatbox);
+    OLDSCHOOL(R.layout.widget_item_os, R.drawable.os_widget_bg, R.drawable.os_ic_widget_mic, R.drawable.os_ic_widget_add, R.id.widget_title_img, R.drawable.os_chatbox,
+        R.layout.widget_check_row_os, R.drawable.os_ic_check_on, R.drawable.os_ic_check_off, R.drawable.os_chatbox);
 
     /**
      * Every theme uses the same frame layout, so a theme change is applied by the launcher as a plain re-apply of

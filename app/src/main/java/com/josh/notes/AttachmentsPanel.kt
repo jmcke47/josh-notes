@@ -158,10 +158,9 @@ class AttachmentsPanel(
     }
 
     private fun tileMenu(noteId: Long, a: Attachment) {
-        osDialog(activity).setTitle(a.name)
-            .setItems(arrayOf("Open", "Share", "Delete")) { _, w ->
-                when (w) { 0 -> open(noteId, a); 1 -> share(noteId, a); 2 -> confirmRemove(a) }
-            }.show()
+        osOptions(activity, a.name, listOf("Open", "Share", "Delete")) { w ->
+            when (w) { 0 -> open(noteId, a); 1 -> share(noteId, a); 2 -> confirmRemove(a) }
+        }
     }
 
     private fun confirmRemove(a: Attachment) {

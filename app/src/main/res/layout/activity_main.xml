@@ -78,7 +78,7 @@
             android:contentDescription="@string/app_name"
             android:padding="8dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_os_notes" />
+            android:src="@drawable/os_ic_scroll" />
         <ImageButton
             android:id="@+id/tab_search"
             android:layout_width="0dp"
@@ -88,7 +88,7 @@
             android:contentDescription="@string/search"
             android:padding="8dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_os_search" />
+            android:src="@drawable/os_ic_magnifier" />
         <ImageButton
             android:id="@+id/tab_archive"
             android:layout_width="0dp"
@@ -98,7 +98,7 @@
             android:contentDescription="@string/show_archive"
             android:padding="8dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_os_archive" />
+            android:src="@drawable/os_ic_chest" />
         <ImageButton
             android:id="@+id/tab_trash"
             android:layout_width="0dp"
@@ -108,7 +108,7 @@
             android:contentDescription="@string/show_trash"
             android:padding="8dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_os_bin" />
+            android:src="@drawable/os_ic_bin" />
         <ImageButton
             android:id="@+id/tab_settings"
             android:layout_width="0dp"
@@ -118,6 +118,6 @@
             android:contentDescription="@string/settings"
             android:padding="8dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_os_settings" />
+            android:src="@drawable/os_ic_wrench" />
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

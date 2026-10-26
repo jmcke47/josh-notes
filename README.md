@@ -22,3 +22,10 @@ Installed apps can also be pointed at a new URL in-app: menu → "Update source 
 ## Signing — IMPORTANT
 `keystore/release.jks` + `keystore/keystore.properties` sign every build (debug too). Never regenerate it.
 Backup: `/home/box/backups/notes-app-keystore/`. Cert SHA-256: E5:08:1D:F9:...:9E:A5
+
+## Old School theme kit
+The Old School look (tokens, font, drawables, dialogs/context menu, XP drop, banners, widget pieces…) lives in the
+shared kit `/workspace/shared/oldschool-theme/` (v1.0.0, see its README). It is vendored here as the Gradle module
+`oldschool-theme/` (committed, so clones/CI build without the shared folder) and refreshed by `release.sh` via
+`tools/sync-into.sh`. Don't edit `oldschool-theme/` directly: change the shared kit, bump its VERSION, re-sync.
+Josh Notes adds only `Theme.JoshNotes.OldSchool` (parent `Theme.OldSchool`) in `res/values/themes_os.xml`.

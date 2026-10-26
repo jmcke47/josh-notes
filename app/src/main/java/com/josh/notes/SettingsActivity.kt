@@ -275,7 +275,7 @@ class SettingsActivity : LockableActivity() {
             }
         }
         findViewById<View>(R.id.font_credit).setOnClickListener {
-            val text = runCatching { assets.open("licenses/PixelifySans-OFL.txt").bufferedReader().readText() }.getOrDefault("")
+            val text = runCatching { assets.open("licenses/os_PixelifySans-OFL.txt").bufferedReader().readText() }.getOrDefault("")
             osDialog(this).setTitle("Pixelify Sans — SIL OFL 1.1")
                 .setMessage(text).setPositiveButton(android.R.string.ok, null).show()
         }

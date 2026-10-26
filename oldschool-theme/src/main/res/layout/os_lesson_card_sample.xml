@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sample: long lesson text in a parchment scroll card. Copy into your layout and change ids/text. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:padding="12dp">
+    <com.josh.oldschool.OsLessonCard android:id="@+id/os_lesson_card"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:id="@+id/os_lesson_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.OldSchool.LessonTitle" android:gravity="center" android:text="Lesson title" />
+        <TextView android:id="@+id/os_lesson_body" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:textAppearance="@style/TextAppearance.OldSchool.LessonBody" android:text="Lesson text…" />
+    </com.josh.oldschool.OsLessonCard>
+</ScrollView>

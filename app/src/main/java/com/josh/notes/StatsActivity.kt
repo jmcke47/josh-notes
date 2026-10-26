@@ -23,7 +23,7 @@ import java.text.NumberFormat
 /** Skill-style stats: each stat is a "skill" with XP and a level on the classic experience curve. */
 class StatsActivity : LockableActivity() {
     private val os by lazy { AppSettings.oldSchool(this) }
-    private val font by lazy { if (os) runCatching { ResourcesCompat.getFont(this, R.font.pixelify_sans) }.getOrNull() else null }
+    private val font by lazy { if (os) runCatching { ResourcesCompat.getFont(this, R.font.os_pixelify_sans) }.getOrNull() else null }
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private val nf = NumberFormat.getIntegerInstance()
 

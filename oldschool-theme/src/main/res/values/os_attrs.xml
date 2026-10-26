@@ -1,0 +1,25 @@
+<resources>
+    <!-- Custom drawable states for quiz answers (used by @drawable/os_answer_button + OsAnswerButton). -->
+    <attr name="os_state_correct" format="boolean" />
+    <attr name="os_state_wrong" format="boolean" />
+    <declare-styleable name="OsAnswerButton">
+        <attr name="os_state_correct" />
+        <attr name="os_state_wrong" />
+    </declare-styleable>
+    <declare-styleable name="OsTimerOrb">
+        <attr name="os_durationMs" format="integer" />
+        <attr name="os_segments" format="integer" />
+        <attr name="os_showText" format="boolean" />
+        <attr name="os_fraction" format="float" />
+    </declare-styleable>
+    <declare-styleable name="OsInventorySlot">
+        <attr name="os_emoji" format="string" />
+        <attr name="os_label" format="string" />
+        <attr name="os_count" format="integer" />
+    </declare-styleable>
+    <declare-styleable name="OsSkillTile">
+        <attr name="os_icon" format="reference" />
+        <attr name="os_level" format="integer" />
+        <attr name="os_label" />
+    </declare-styleable>
+</resources>

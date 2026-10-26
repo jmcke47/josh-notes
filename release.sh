@@ -19,6 +19,15 @@ cd "$(dirname "$0")"
 export ANDROID_HOME="${ANDROID_HOME:-/opt/android-sdk}"
 export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk-amd64}"
 
+# Old School theme kit: refresh the vendored copy from the shared kit when it's on this machine
+# (the vendored ./oldschool-theme is committed, so fresh clones / CI build without the shared folder).
+KIT_SRC="${OLDSCHOOL_KIT:-/workspace/shared/oldschool-theme}"
+if [[ -x "$KIT_SRC/tools/sync-into.sh" ]]; then
+  "$KIT_SRC/tools/sync-into.sh" "$PWD" oldschool-theme
+elif [[ ! -f oldschool-theme/VERSION ]]; then
+  echo "ERROR: oldschool-theme/ (Old School kit) is missing and $KIT_SRC isn't available." >&2; exit 1
+fi
+
 BUMP="${1:-patch}"
 NOTES="${2:-Bug fixes and improvements.}"
 

@@ -1,8 +1,11 @@
 """Generates ORIGINAL pixel art for the "Old School" theme (procedural textures + hand-made 16x16 icons).
-No game assets are used. Run: python3 art/gen_oldschool.py"""
+No game assets are used. Run from the kit root: python3 tools/gen_art.py"""
 import random, math
 from PIL import Image, ImageDraw
-OUT = 'app/src/main/res/drawable-nodpi/'
+import os
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+OUT = os.path.join(ROOT, 'src/main/res/drawable-nodpi/')
+OUT9 = os.path.join(ROOT, 'src/main/res/drawable-xxhdpi/')
 random.seed(1234)
 
 def clamp(v): return max(0, min(255, int(v)))
@@ -100,7 +103,7 @@ PAL = {'.': None, 'k': (0, 0, 0), 'w': (255, 255, 255), 'y': (255, 255, 0), 'o':
        'B': (84, 56, 24), 'p': (226, 208, 160), 'P': (176, 152, 104), 'g': (150, 150, 150), 'G': (96, 96, 96),
        'r': (190, 30, 20), 'R': (120, 14, 10), 'c': (0, 220, 220), 'l': (200, 200, 210), 'L': (130, 130, 140), 'e': (40, 190, 40)}
 ICONS = {
- 'ic_os_notes': [  # rolled scroll
+ 'os_ic_scroll': [  # rolled scroll
   "................",
   "..kkkkkkkkkkkk..",
   ".kPppppppppppPk.",
@@ -117,7 +120,7 @@ ICONS = {
   ".kPppppppppppPk.",
   "..kkkkkkkkkkkk..",
   "................"],
- 'ic_os_archive': [  # chest
+ 'os_ic_chest': [  # chest
   "................",
   "................",
   "...kkkkkkkkkk...",
@@ -134,7 +137,7 @@ ICONS = {
   "................",
   "................",
   "................"],
- 'ic_os_bin': [  # bucket-style bin
+ 'os_ic_bin': [  # bucket-style bin
   "................",
   "......kkkk......",
   ".....kGkkGk.....",
@@ -151,7 +154,7 @@ ICONS = {
   "....kkkkkkkk....",
   "................",
   "................"],
- 'ic_os_settings': [  # wrench
+ 'os_ic_wrench': [  # wrench
   "................",
   "..........kkk...",
   ".........kllk...",
@@ -168,7 +171,7 @@ ICONS = {
   ".kLLk...........",
   "..kk............",
   "................"],
- 'ic_os_search': [  # magnifier
+ 'os_ic_magnifier': [  # magnifier
   "................",
   "....kkkkk.......",
   "...kcccccK......",
@@ -185,7 +188,7 @@ ICONS = {
   ".............kk.",
   "................",
   "................"],
- 'ic_os_xp': [  # quill
+ 'os_ic_quill': [  # quill
   "................",
   "...........kkk..",
   "..........kwwwk.",
@@ -203,7 +206,7 @@ ICONS = {
   ".kk.............",
   "................"],
 
- 'ic_os_skill_notes': [  # open book
+ 'os_ic_book': [  # open book
   "................",
   "................",
   ".kkkkkk..kkkkkk.",
@@ -220,7 +223,7 @@ ICONS = {
   ".kkkkkkkkkkkkkk.",
   "................",
   "................"],
- 'ic_os_skill_words': [  # quill over ink pot
+ 'os_ic_inkpot': [  # quill over ink pot
   "................",
   "............kk..",
   "...........kwwk.",
@@ -237,7 +240,7 @@ ICONS = {
   "..kGkkkkGk......",
   "...kGGGGk.......",
   "....kkkk........"],
- 'ic_os_skill_streak': [  # flame
+ 'os_ic_flame': [  # flame
   "................",
   ".......k........",
   "......kok.......",
@@ -254,7 +257,7 @@ ICONS = {
   "....kkooookk....",
   "......kkkk......",
   "................"],
- 'ic_os_skill_tasks': [  # tick on parchment
+ 'os_ic_tick_scroll': [  # tick on parchment
   "................",
   ".kkkkkkkkkkkkk..",
   "kpppppppppppppk.",
@@ -271,7 +274,7 @@ ICONS = {
   "kpppppppppppppk.",
   ".kkkkkkkkkkkkk..",
   "................"],
- 'ic_os_check_off': [  # empty stone checkbox
+ 'os_ic_check_off': [  # empty stone checkbox
   "................",
   "................",
   "..kkkkkkkkkkkk..",
@@ -288,7 +291,7 @@ ICONS = {
   "..kkkkkkkkkkkk..",
   "................",
   "................"],
- 'ic_os_check_on': [  # stone checkbox with green tick
+ 'os_ic_check_on': [  # stone checkbox with green tick
   "................",
   "............kk..",
   "..kkkkkkkkkkeek.",
@@ -313,4 +316,5 @@ for name, rows in ICONS.items():
             col = PAL.get(ch if ch != 'K' else 'k')
             if col: px[x, y] = col + (255,)
     img.resize((48, 48), Image.NEAREST).save(OUT+name+'.png', optimize=True)
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gen_kit_parts.py')).read())
 print('ok')

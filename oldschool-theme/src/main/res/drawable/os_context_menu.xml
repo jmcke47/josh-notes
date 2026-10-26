@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Context menu panel: translucent dark brown with a black/grey double outline. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape><solid android:color="#FF000000" /></shape></item>
+    <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp"><shape><solid android:color="#FF5D5447" /></shape></item>
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp"><shape><solid android:color="#FF000000" /></shape></item>
+    <item android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp"><shape><solid android:color="@color/os_menu_bg" /></shape></item>
+</layer-list>

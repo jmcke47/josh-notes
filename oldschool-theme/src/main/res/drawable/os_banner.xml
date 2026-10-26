@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Banner strip: parchment chatbox (same art as os_chatbox) with a gold top rule. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/os_chatbox" />
+    <item android:gravity="top|fill_horizontal" android:height="2dp" android:top="3dp" android:left="3dp" android:right="3dp">
+        <shape><solid android:color="@color/os_gold" /></shape></item>
+</layer-list>

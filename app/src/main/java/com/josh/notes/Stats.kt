@@ -79,12 +79,12 @@ object Stats {
         val (cur, best) = streaks(days)
         val done = checklistsDone(ctx)
         return listOf(
-            Skill("notes", "Scribing", R.drawable.ic_os_skill_notes, notes.size, "notes written", notes.size * 120),
-            Skill("words", "Wordsmithing", R.drawable.ic_os_skill_words, words, "words", words * 4),
-            Skill("streak", "Dedication", R.drawable.ic_os_skill_streak, cur, "day streak", days.size * 350,
+            Skill("notes", "Scribing", R.drawable.os_ic_book, notes.size, "notes written", notes.size * 120),
+            Skill("words", "Wordsmithing", R.drawable.os_ic_inkpot, words, "words", words * 4),
+            Skill("streak", "Dedication", R.drawable.os_ic_flame, cur, "day streak", days.size * 350,
                 "${days.size} active days · best streak $best"),
-            Skill("checklists", "Tasking", R.drawable.ic_os_skill_tasks, done, "checklists completed", done * 300),
-            Skill("organising", Levels.SKILL, R.drawable.ic_os_xp, Levels.xp(ctx), "XP from ticks & reminders", Levels.xp(ctx)),
+            Skill("checklists", "Tasking", R.drawable.os_ic_tick_scroll, done, "checklists completed", done * 300),
+            Skill("organising", Levels.SKILL, R.drawable.os_ic_quill, Levels.xp(ctx), "XP from ticks & reminders", Levels.xp(ctx)),
         )
     }
 }

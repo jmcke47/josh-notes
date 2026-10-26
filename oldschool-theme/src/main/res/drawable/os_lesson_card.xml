@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lesson card: tiled parchment sheet between two rolled ends (os_scroll_roll 9-patch stretches horizontally). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:left="5dp" android:right="5dp" android:top="6dp" android:bottom="6dp"><shape><solid android:color="#FF2B1D0C" /></shape></item>
+    <item android:left="6dp" android:right="6dp" android:top="6dp" android:bottom="6dp">
+        <bitmap android:src="@drawable/os_parchment_tile" android:tileMode="repeat" android:filter="false" /></item>
+    <item android:left="6dp" android:right="6dp" android:top="6dp" android:bottom="6dp">
+        <shape><solid android:color="#00000000" /><stroke android:width="3dp" android:color="#40593A12" /></shape></item>
+    <item android:gravity="top|fill_horizontal" android:height="@dimen/os_scroll_roll_height" android:drawable="@drawable/os_scroll_roll" />
+    <item android:gravity="bottom|fill_horizontal" android:height="@dimen/os_scroll_roll_height" android:drawable="@drawable/os_scroll_roll" />
+</layer-list>

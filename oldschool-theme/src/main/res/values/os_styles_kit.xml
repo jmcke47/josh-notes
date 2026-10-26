@@ -1,0 +1,106 @@
+<resources>
+    <!-- Lesson card: parchment scroll with rolled ends; children get ink text. -->
+    <style name="Widget.OldSchool.LessonCard" parent="">
+        <item name="android:background">@drawable/os_lesson_card</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingRight">20dp</item>
+        <item name="android:paddingTop">26dp</item>
+        <item name="android:paddingBottom">26dp</item>
+    </style>
+    <style name="TextAppearance.OldSchool.LessonTitle" parent="TextAppearance.OldSchool.Ink.TitleLarge">
+        <item name="android:textColor">@color/os_chat_blue_dark</item>
+        <item name="android:textSize">@dimen/os_text_title</item>
+    </style>
+    <style name="TextAppearance.OldSchool.LessonBody" parent="TextAppearance.OldSchool.Ink.BodyLarge">
+        <item name="android:textColor">@color/os_ink</item>
+        <item name="android:lineSpacingExtra">4sp</item>
+    </style>
+
+    <!-- Quiz answer button (normal / pressed / correct / wrong). Use with com.josh.oldschool.OsAnswerButton. -->
+    <style name="Widget.OldSchool.AnswerButton" parent="">
+        <item name="android:background">@drawable/os_answer_button</item>
+        <item name="android:minHeight">@dimen/os_answer_min_height</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:textSize">@dimen/os_text_button</item>
+        <item name="android:textColor">@color/os_orange</item>
+        <item name="android:fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:shadowColor">#FF000000</item>
+        <item name="android:shadowDx">2</item>
+        <item name="android:shadowDy">2</item>
+        <item name="android:shadowRadius">0.01</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <!-- 9-patch stone button and tab (alternatives to the layer-list Widget.OldSchool.Button). -->
+    <style name="Widget.OldSchool.Button.Stone" parent="Widget.OldSchool.Button">
+        <item name="android:background">@drawable/os_button_9</item>
+        <item name="backgroundTint">@null</item>
+    </style>
+    <style name="Widget.OldSchool.Tab" parent="">
+        <item name="android:background">@drawable/os_tab_9</item>
+        <item name="android:minHeight">@dimen/os_tab_height</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/os_tab_text</item>
+        <item name="android:fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:textSize">@dimen/os_text_body</item>
+        <item name="android:shadowColor">#FF000000</item>
+        <item name="android:shadowDx">2</item>
+        <item name="android:shadowDy">2</item>
+        <item name="android:shadowRadius">0.01</item>
+    </style>
+
+    <!-- Stone-track seekbar with a gold knob (e.g. a "depth" slider). Use on android.widget.SeekBar /
+         androidx.appcompat.widget.AppCompatSeekBar: style="@style/Widget.OldSchool.SeekBar". -->
+    <style name="Widget.OldSchool.SeekBar" parent="Widget.AppCompat.SeekBar">
+        <item name="android:progressDrawable">@drawable/os_seekbar_track</item>
+        <item name="android:thumb">@drawable/os_seek_thumb</item>
+        <item name="android:thumbOffset">2dp</item>
+        <item name="android:splitTrack">false</item>
+        <item name="android:minHeight">@dimen/os_seek_height</item>
+        <item name="android:maxHeight">@dimen/os_seek_height</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:progressTint">@null</item>
+        <item name="android:thumbTint">@null</item>
+        <item name="android:progressBackgroundTint">@null</item>
+        <item name="android:background">@null</item>
+    </style>
+    <!-- Ticks variant (stepped depth levels): set android:max to the number of steps. -->
+    <style name="Widget.OldSchool.SeekBar.Discrete" parent="Widget.OldSchool.SeekBar">
+        <item name="android:tickMark">@drawable/os_seek_tick</item>
+    </style>
+
+    <!-- Bars (RemoteViews-safe: ProgressBar + XML drawables only). -->
+    <style name="Widget.OldSchool.ProgressBar" parent="Widget.AppCompat.ProgressBar.Horizontal">
+        <item name="android:progressDrawable">@drawable/os_progress_hp</item>
+        <item name="android:minHeight">@dimen/os_bar_height</item>
+        <item name="android:maxHeight">@dimen/os_bar_height</item>
+        <item name="android:indeterminate">false</item>
+    </style>
+    <style name="Widget.OldSchool.ProgressBar.Xp" parent="Widget.OldSchool.ProgressBar">
+        <item name="android:progressDrawable">@drawable/os_progress_xp</item>
+    </style>
+
+    <!-- Inventory slot / skill tile / timer orb defaults. -->
+    <style name="Widget.OldSchool.InventorySlot" parent="">
+        <item name="android:layout_width">@dimen/os_slot_size</item>
+        <item name="android:layout_height">@dimen/os_slot_size</item>
+    </style>
+    <style name="Widget.OldSchool.TimerOrb" parent="">
+        <item name="android:layout_width">@dimen/os_orb_size</item>
+        <item name="android:layout_height">@dimen/os_orb_size</item>
+    </style>
+    <style name="Widget.OldSchool.CheckBox" parent="Widget.AppCompat.CompoundButton.CheckBox">
+        <item name="android:button">@drawable/os_checkbox</item>
+        <item name="buttonCompat">@drawable/os_checkbox</item>
+        <item name="buttonTint">@null</item>
+        <item name="android:textColor">@color/os_yellow</item>
+        <item name="android:fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:shadowColor">#FF000000</item>
+        <item name="android:shadowDx">2.5</item>
+        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowRadius">0.01</item>
+    </style>
+</resources>
