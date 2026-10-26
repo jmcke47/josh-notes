@@ -30,9 +30,13 @@ object OsPixelText {
         return minSp
     }
 
-    /** @param maxLines 1 = single ellipsized line. Returns null for blank text. */
+    /**
+     * @param maxLines 1 = single ellipsized line; >1 wraps at word boundaries inside [maxWidthPx] (last line ellipsized).
+     * [text] may be a Spanned with ForegroundColorSpans (see [OsChat.text]); the shadow stays black.
+     * [center] centres wrapped lines on each other (for slot labels). Returns null for blank text.
+     */
     fun render(ctx: Context, text: CharSequence, sizeSp: Float, color: Int, maxWidthPx: Int, maxLines: Int = 1,
-               shadow: Boolean = true, strike: Boolean = false, bold: Boolean = false): Bitmap? {
+               shadow: Boolean = true, strike: Boolean = false, bold: Boolean = false, center: Boolean = false): Bitmap? {
         if (text.isBlank()) return null
         val dm = ctx.resources.displayMetrics
         val paint = TextPaint(TextPaint.ANTI_ALIAS_FLAG).apply {
@@ -41,20 +45,33 @@ object OsPixelText {
         }
         val shadowPx = if (shadow) (1.5f * dm.density).coerceAtLeast(1f) else 0f
         val width = (maxWidthPx - shadowPx).toInt().coerceAtLeast(1)
+        val align = if (center) Layout.Alignment.ALIGN_CENTER else Layout.Alignment.ALIGN_NORMAL
         val layout = StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
-            .setAlignment(Layout.Alignment.ALIGN_NORMAL).setIncludePad(false)
+            .setAlignment(align).setIncludePad(false)
             .setMaxLines(maxLines).setEllipsize(TextUtils.TruncateAt.END).build()
-        var w = 0f
-        for (i in 0 until layout.lineCount) w = maxOf(w, layout.getLineWidth(i))
+        var left = Float.MAX_VALUE; var right = 0f
+        for (i in 0 until layout.lineCount) { left = minOf(left, layout.getLineLeft(i)); right = maxOf(right, layout.getLineRight(i)) }
+        if (left == Float.MAX_VALUE) left = 0f
+        val w = right - left
         val bw = (w + shadowPx).toInt().coerceIn(1, maxWidthPx.coerceAtLeast(1))
         val bh = (layout.height + shadowPx).toInt().coerceAtLeast(1)
         val bmp = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
         bmp.density = dm.densityDpi
         val c = Canvas(bmp)
+        c.translate(-left, 0f)
         if (shadow) {
+            // Coloured spans (e.g. OsChat speaker names) must not colour the shadow: draw a span-free black copy.
+            val plain: CharSequence = if (text is android.text.Spanned) android.text.SpannableString(text).also { sp ->
+                sp.getSpans(0, sp.length, android.text.style.CharacterStyle::class.java)
+                    .filter { it !is android.text.style.MetricAffectingSpan }.forEach { sp.removeSpan(it) }
+            } else text
+            val sPaint = TextPaint(paint).apply { this.color = Color.BLACK }
+            val sl = if (plain === text) null else StaticLayout.Builder.obtain(plain, 0, plain.length, sPaint, width)
+                .setAlignment(align).setIncludePad(false)
+                .setMaxLines(maxLines).setEllipsize(TextUtils.TruncateAt.END).build()
             val oldColor = paint.color
-            paint.color = Color.BLACK
-            c.save(); c.translate(shadowPx, shadowPx); layout.draw(c); c.restore()
+            if (sl == null) paint.color = Color.BLACK
+            c.save(); c.translate(shadowPx, shadowPx); (sl ?: layout).draw(c); c.restore()
             paint.color = oldColor
         }
         layout.draw(c)

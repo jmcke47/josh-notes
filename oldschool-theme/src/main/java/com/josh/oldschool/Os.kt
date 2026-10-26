@@ -48,4 +48,67 @@ object Os {
     fun shadow(tv: android.widget.TextView, dxDp: Float = 1.5f) {
         tv.setShadowLayer(0.01f, dp(tv.context, dxDp), dp(tv.context, dxDp), 0xFF000000.toInt())
     }
+
+    /** Alias for [OsAnimations.scale] (test hook: 0 = instant, >1 = slow motion). See [OsAnimations.freeze]. */
+    @JvmStatic var animationScale: Float
+        get() = OsAnimations.scale
+        set(v) { OsAnimations.scale = v }
+
+    /**
+     * Restyle an already-inflated view tree for parchment (use when you can't wrap it in
+     * `ThemeOverlay.OldSchool.Parchment`, e.g. views built in code or inflated with the dark theme):
+     *  - TextViews: no shadow; light kit colours mapped to ink (yellow/white -> black, orange/link -> link ink,
+     *    cyan -> chat blue, green -> dark green, red -> dark red); link colour = link ink.
+     *  - EditTexts: ink text, brown hint.
+     *  - Buttons (incl. MaterialButton): flat "link-ink" text buttons (os_link_ink, black while pressed) on the
+     *    os_chat_row press highlight, no stone background/tint/stroke.
+     *  - CheckBox/RadioButton/Switch: ink text, ink-soft button tint.
+     * Recurses into ViewGroups. Returns [view].
+     */
+    @JvmStatic fun <T : android.view.View> parchmentize(view: T): T {
+        val c = view.context
+        if (view is android.view.ViewGroup) for (i in 0 until view.childCount) parchmentize(view.getChildAt(i))
+        if (view !is android.widget.TextView) return view
+        view.setShadowLayer(0f, 0f, 0f, 0)
+        view.setLinkTextColor(c.getColor(R.color.os_link_ink))
+        when (view) {
+            is android.widget.CompoundButton -> {
+                view.setTextColor(c.getColor(R.color.os_ink))
+                view.buttonTintList = android.content.res.ColorStateList.valueOf(c.getColor(R.color.os_ink_soft))
+            }
+            is android.widget.Button -> {
+                view.setTextColor(android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_pressed), intArrayOf(-android.R.attr.state_enabled), intArrayOf()),
+                    intArrayOf(c.getColor(R.color.os_ink), 0x80B32400.toInt(), c.getColor(R.color.os_link_ink))))
+                if (view is com.google.android.material.button.MaterialButton) {
+                    view.strokeWidth = 0; view.elevation = 0f; view.stateListAnimator = null
+                    view.iconTint = android.content.res.ColorStateList.valueOf(c.getColor(R.color.os_link_ink))
+                }
+                view.setBackgroundResource(R.drawable.os_chat_row)
+                view.backgroundTintList = null
+            }
+            is android.widget.EditText -> {
+                view.setTextColor(c.getColor(R.color.os_ink)); view.setHintTextColor(0xFF8A7346.toInt())
+            }
+            else -> view.setTextColor(inkFor(c, view.currentTextColor))
+        }
+        return view
+    }
+
+    /** Parchment equivalent of a dark-theme text colour (see [parchmentize]). */
+    @JvmStatic fun inkFor(ctx: Context, color: Int): Int {
+        val rgb = color or 0xFF000000.toInt()
+        fun k(id: Int) = ctx.getColor(id) or 0xFF000000.toInt()
+        return when (rgb) {
+            k(R.color.os_yellow), k(R.color.os_white), k(R.color.os_header), k(R.color.os_text), k(R.color.os_gold) -> ctx.getColor(R.color.os_ink)
+            k(R.color.os_orange), k(R.color.os_link) -> ctx.getColor(R.color.os_link_ink)
+            k(R.color.os_cyan) -> ctx.getColor(R.color.os_chat_blue)
+            k(R.color.os_green) -> ctx.getColor(R.color.os_answer_correct)
+            k(R.color.os_red) -> ctx.getColor(R.color.os_chat_red)
+            else -> {
+                val l = (0.299 * android.graphics.Color.red(rgb) + 0.587 * android.graphics.Color.green(rgb) + 0.114 * android.graphics.Color.blue(rgb)) / 255
+                if (l > 0.55) ctx.getColor(R.color.os_ink) else color
+            }
+        }
+    }
 }

@@ -41,7 +41,7 @@ object OsXpDrop {
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) { root.removeView(tv) }
             })
-            start()
+            OsAnimations.play(this)
         }
         return tv
     }
@@ -74,7 +74,7 @@ object OsXpDrops {
                 addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: android.animation.Animator) { root.removeView(tv) }
                 })
-                start()
+                OsAnimations.play(this)
             }
             tv
         }
@@ -115,13 +115,13 @@ object OsBanner {
             Gravity.BOTTOM).apply { val m = Os.dpi(a, 10f); setMargins(m, m, m, Os.dpi(a, 96f)) })
         var gone = false
         val dismiss = {
-            if (!gone) { gone = true; onDismiss?.invoke(); overlay.animate().alpha(0f).setDuration(200).withEndAction { root.removeView(overlay) }.start() }
+            if (!gone) { gone = true; onDismiss?.invoke(); fadeOut(overlay, root) }
         }
         overlay.setOnClickListener { dismiss() }
         root.addView(overlay, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        overlay.alpha = 0f; overlay.animate().alpha(1f).setDuration(150).start()
+        overlay.alpha = 0f; OsAnimations.play(ObjectAnimator.ofFloat(overlay, View.ALPHA, 0f, 1f).setDuration(150), freezable = false)
         fw?.start(); if (fw != null) lastFireworks = fw
-        if (autoDismissMs > 0) overlay.postDelayed({ dismiss() }, autoDismissMs)
+        if (autoDismissMs > 0 && OsAnimations.freezeAt == null) overlay.postDelayed({ dismiss() }, autoDismissMs)
         return overlay
     }
 
@@ -163,10 +163,19 @@ object OsQuestScroll {
             Gravity.CENTER).apply { val m = Os.dpi(a, 18f); setMargins(m, m, m, m) })
         var gone = false
         overlay.setOnClickListener {
-            if (!gone) { gone = true; onDismiss?.invoke(); overlay.animate().alpha(0f).setDuration(200).withEndAction { root.removeView(overlay) }.start() }
+            if (!gone) { gone = true; onDismiss?.invoke(); fadeOut(overlay, root) }
         }
         root.addView(overlay, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        overlay.alpha = 0f; overlay.animate().alpha(1f).setDuration(180).start()
+        overlay.alpha = 0f; OsAnimations.play(ObjectAnimator.ofFloat(overlay, View.ALPHA, 0f, 1f).setDuration(180), freezable = false)
         return overlay
     }
+}
+
+/** Exit fade shared by banners and the quest scroll (completes instantly while [OsAnimations] is frozen). */
+internal fun fadeOut(overlay: View, root: ViewGroup) {
+    OsAnimations.play(ObjectAnimator.ofFloat(overlay, View.ALPHA, overlay.alpha, 0f).setDuration(200).apply {
+        addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) { root.removeView(overlay) }
+        })
+    }, freezable = false)
 }

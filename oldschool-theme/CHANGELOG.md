@@ -1,5 +1,22 @@
 # Old School theme kit — changelog
 
+## 1.2.0 (2026-10-26)
+Additions requested by Josh Learn (v1.4.2 had local fallbacks for these). Backwards compatible; no visual change to
+existing pieces apart from the LinkInk shadow fix.
+- `OsRemote.slot(..., labelMaxLines, labelSp)`: 2-line wrapped, centred slot labels; `OsPixelText.render(..., center)`,
+  `OsRemote.pixelText(..., bold, center)`.
+- `@layout/os_rv_inventory_slot_wide`: stretchable (match_parent) RemoteViews slot for widget grid columns.
+- `OsChat` (text/view/bind/remote) + `@layout/os_rv_chat_line` + `OsRemote.chatLine`: coloured speaker + message on
+  `os_chat_row`; `OsPixelText` keeps span colours with a black shadow.
+- `Os.parchmentize(view)` / `Os.inkFor(ctx, color)`; `ThemeOverlay.OldSchool.Parchment` also sets button styles and
+  edit-text colour; `Widget.OldSchool.Button.LinkInk` has no shadow.
+- `Widget.OldSchool.BottomNav` (+ `.Labeled`), `OsBottomNav` view + `OsBottomNav.style(nav)`, drawables
+  `os_bottom_nav_item(_fill)`, colours `os_bottom_nav_text`, `os_bottom_nav_icon_tint`, `TextAppearance.OldSchool.NavLabel`.
+- `Widget.OldSchool.Chip` / `.Chip.Choice` / `.Chip.Filter`, `ThemeOverlay.OldSchool.Chip(.Choice/.Filter)`, `OsChips`,
+  `TextAppearance.OldSchool.Chip`, colours `os_chip_bg/text/stroke`.
+- `OsAnimations` test hook (freeze/seek/release/reset/scale, `Os.animationScale`); XP drops, banners, quest scroll,
+  fireworks and timer orb all run through it.
+
 ## 1.1.0 (2026-10-26)
 The 2007-era redesign. Original art only; backwards compatible with 1.0 APIs.
 - Font: **OS Small** regular + bold, self-drawn pixel font (cap height 7px, legible small text), SIL OFL 1.1

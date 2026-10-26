@@ -39,7 +39,7 @@ class OsFireworks @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
                     while (frames < target) { step(); frames++ }
                     invalidate()
                 }
-                start()
+                OsAnimations.play(this)
             }
         }
     }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stretchable RemoteViews inventory slot: fills its parent's width (e.g. a GridView column or a weighted
+     LinearLayout cell); the os_slot 9-patch stretches, the emoji sits above a label that may wrap to 2 lines.
+     Height grows with the label (min @dimen/os_slot_size). Fill with OsRemote.slot(..., labelMaxLines = 2). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/os_slot" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:minHeight="@dimen/os_slot_size" android:background="@drawable/os_slot_bg" android:padding="3dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="center" android:gravity="center_horizontal" android:orientation="vertical">
+        <TextView android:id="@+id/os_slot_emoji" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center" android:includeFontPadding="false" android:textSize="24sp" />
+        <ImageView android:id="@+id/os_slot_label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="1dp" android:importantForAccessibility="no" />
+    </LinearLayout>
+    <ImageView android:id="@+id/os_slot_count" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="top|start" android:importantForAccessibility="no" android:visibility="gone" />
+</FrameLayout>

@@ -1,4 +1,4 @@
-# Old School theme kit (`oldschool-theme`) — v1.1.0
+# Old School theme kit (`oldschool-theme`) — v1.2.0
 
 A self-contained Android library module with the "Old School" look used by **Josh Notes** and **Josh Learn**:
 stone interface panels with bevels, parchment scrolls, yellow pixel text with a hard black shadow, cyan secondary
@@ -57,6 +57,12 @@ commit. Josh Notes does this automatically at the start of `release.sh`.
 `drawable/os_*.xml`, `drawable-nodpi/os_*.png`, `font/pixelify_sans.ttf`). App resources silently override library
 resources of the same name, so stale copies would make the two apps drift apart. The font is now
 `@font/os_pixelify_sans`.
+
+### Upgrading from 1.1.0 to 1.2.0
+Re-sync and rebuild; nothing to change. 1.2 only **adds** APIs (section 3c). Two small fixes you get for free:
+`Widget.OldSchool.Button.LinkInk` (the parchment overlay's button style) no longer inherits the dark theme's text
+shadow, and `ThemeOverlay.OldSchool.Parchment` now also covers `android:buttonStyle`, `buttonStyle`,
+`materialButtonOutlinedStyle` and `android:editTextColor`. Local fallbacks for the items in 3c can be deleted.
 
 ### Upgrading from 1.0.0 (what changed)
 1. Re-sync (`sync-into.sh`), rebuild. No API was removed; everything from 1.0 still compiles.
@@ -138,6 +144,28 @@ for black ink text, no shadow.
 | Stone buttons | `os_button_normal/_pressed` textured; style `Widget.OldSchool.Button.Dialog` for dialog buttons |
 | Pixel text → bitmap | `OsPixelText.render(ctx, text, sizeSp, color, maxWidthPx, maxLines = 1, shadow = true, strike = false, bold = false)` returns a `Bitmap`; `OsPixelText.fitSize(..., bold)` shrinks to fit. `OsRemote.pixelText(ctx, views, imageViewId, text, sizeSp, color, maxWidthPx, ...)` sets it straight into a RemoteViews ImageView. Use for widgets, notifications, anywhere an app font can't load |
 
+## 3c. New in 1.2
+
+| Piece | Resources / classes |
+|---|---|
+| **2-line slot labels** | `OsRemote.slot(ctx, views, emoji, label, count, widthPx, labelMaxLines = 2)`; label bitmap word-wraps to `widthPx` minus padding, lines centred, last line ellipsized; `labelSp` defaults to 9sp when >1 line (11sp for 1). `OsPixelText.render(..., center = true)` / `OsRemote.pixelText(..., bold, center)` for your own wrapped bitmaps |
+| **Stretch slot (RemoteViews)** | `@layout/os_rv_inventory_slot_wide`: `match_parent` width (fills a GridView column / weighted cell), height wraps (min `os_slot_size`), `os_slot_bg` 9-patch stretches; same ids as `os_rv_inventory_slot` so `OsRemote.slot` fills both |
+| **Chat lines** | `OsChat.text(ctx, speaker, message, speakerColor = black, messageColor = chat blue)` → spanned "Speaker: message"; Views: `OsChat.view(ctx, …)` / `OsChat.bind(textView, …)` (pixel font, no shadow, `os_chat_row` background, `maxLines`); RemoteViews: `@layout/os_rv_chat_line` + `OsChat.remote(ctx, views, speaker, message, widthPx, maxLines = 2)` (= `OsRemote.chatLine`). Put lines on `os_chatbox`. Pixel bitmaps keep span colours and a black shadow |
+| **Parchment restyle** | XML: `android:theme="@style/ThemeOverlay.OldSchool.Parchment"` (ink text, no shadows, link-ink text buttons). Code / already-inflated views: `Os.parchmentize(view)` (recursive: yellow/white → ink, orange → link ink, cyan → chat blue; no shadows; Buttons/MaterialButtons → flat link-ink text buttons on the `os_chat_row` press highlight; EditText ink + brown hint; CheckBox/Radio ink). `Os.inkFor(ctx, color)` for single colours |
+| **Bottom nav** | `<com.josh.oldschool.OsBottomNav app:menu="…" />` (a `BottomNavigationView` that defaults to `Widget.OldSchool.BottomNav` and keeps pixel icons untinted), or `style="@style/Widget.OldSchool.BottomNav"` on a plain `BottomNavigationView` **plus** `OsBottomNav.style(nav)` (Material ignores `itemIconTint="@null"` in styles). Same art as the side tabs: 50dp stone squares (`os_bottom_nav_item`), red when checked, darker when pressed, on `os_side_panel`, no ripple/indicator, unlabelled. `Widget.OldSchool.BottomNav.Labeled` / `OsBottomNav.style(nav, labeled = true)`: stone over icon + bold pixel label (white checked / orange). Monochrome vector icons: `app:itemIconTint="@color/os_bottom_nav_icon_tint"` |
+| **Chips** | `style="@style/Widget.OldSchool.Chip"` (assist), `.Chip.Choice` (single-select, no check mark), `.Chip.Filter` (multi-select, pixel check mark): square stone face, black edge, orange bold pixel text; checked = red face + white text. In code: `OsChips.assist/choice/filter(ctx, text)` or `Chip(ContextThemeWrapper(ctx, R.style.ThemeOverlay_OldSchool_Chip_Choice), null, com.google.android.material.R.attr.chipStyle)`. Colours `os_chip_bg/os_chip_text/os_chip_stroke` |
+| **Animation test hook** | `OsAnimations.freeze(0.5f)` holds every kit animation (XP drop(s), fireworks, timer orb) at 50%; `seek(f)` moves them; `release()` / `reset()` lets them finish. While frozen, banner/quest-scroll fades complete instantly and banners don't auto-dismiss; timer `onFinished` never fires. `OsAnimations.scale` (alias `Os.animationScale`): 0 = instant, 10 = slow motion. `heldCount`, `testMode`, `duration(ms)`; `OsAnimations.play(animator, freezable)` to put your own animators under the same switch. Always `OsAnimations.reset()` in `@After` |
+
+Robolectric example:
+```kotlin
+@After fun tidy() = OsAnimations.reset()
+@Test fun xpDropShot() {
+    OsAnimations.freeze(0.4f)
+    OsXpDrops.rightSide(activity, listOf(R.drawable.os_ic_book to 120))
+    snap(activity)                       // drop is mid-rise, fully visible
+}
+```
+
 ### Widgets (RemoteViews) notes
 Launchers can't load app fonts or custom views in widgets, so: pixel text = `OsRemote.pixelText(...)` (renders a
 bitmap into an ImageView), answer states = swap `os_answer_*` backgrounds with
@@ -157,5 +185,5 @@ Bump `VERSION` + `CHANGELOG.md` for any visible change, then re-sync both apps.
 Keep everything `os_`-prefixed and package-agnostic, original art only (no game assets, names or logos), and no
 app-specific strings. Tests/showcase for the kit live in Josh Notes (`OldSchoolKitTest`, renders
 `screens/22-kit-components.png` and `screens/23-kit-widget-pieces.png`) and `OldSchool11Test`
-(`screens/25-kit-v11-pieces.png`). Font: `python3 tools/gen_font.py` (needs fontTools) rebuilds both TTFs from the glyph
+(`screens/25-kit-v11-pieces.png`) and `OldSchoolKit12Test` (`screens/26-kit-v12-pieces.png`). Font: `python3 tools/gen_font.py` (needs fontTools) rebuilds both TTFs from the glyph
 table in the script.

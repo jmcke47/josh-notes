@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- For monochrome (vector) icons only: white when checked, light stone when pressed, yellow otherwise.
+     Full-colour pixel icons (os_ic_*) should stay untinted (the default of Widget.OldSchool.BottomNav). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:color="@color/os_white" />
+    <item android:state_pressed="true" android:color="#FFE0D8C0" />
+    <item android:color="@color/os_yellow" />
+</selector>

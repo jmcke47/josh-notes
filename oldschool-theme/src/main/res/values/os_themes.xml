@@ -94,6 +94,10 @@
         <item name="android:textViewStyle">@style/Widget.OldSchool.TextView.Ink</item>
         <item name="materialButtonStyle">@style/Widget.OldSchool.Button.LinkInk</item>
         <item name="borderlessButtonStyle">@style/Widget.OldSchool.Button.LinkInk</item>
+        <item name="android:buttonStyle">@style/Widget.OldSchool.Button.LinkInk</item>
+        <item name="buttonStyle">@style/Widget.OldSchool.Button.LinkInk</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.OldSchool.Button.LinkInk</item>
+        <item name="android:editTextColor">@color/os_ink</item>
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.OldSchool.Ink.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.OldSchool.Ink.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.OldSchool.Ink.DisplaySmall</item>
@@ -177,6 +181,11 @@
     <style name="Widget.OldSchool.Button.LinkInk" parent="Widget.Material3.Button.TextButton">
         <item name="android:textColor">@color/os_link_ink</item>
         <item name="iconTint">@color/os_link_ink</item>
+        <item name="android:shadowColor">@android:color/transparent</item>
+        <item name="android:shadowRadius">0</item>
+        <item name="android:shadowDx">0</item>
+        <item name="android:shadowDy">0</item>
+        <item name="rippleColor">#33000000</item>
     </style>
     <style name="Widget.OldSchool.Fab" parent="Widget.Material3.ExtendedFloatingActionButton.Icon.Primary">
         <item name="backgroundTint">@color/os_panel_light</item>

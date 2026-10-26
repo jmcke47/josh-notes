@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BottomNavigationView item background: a side-tab stone square (@dimen/os_side_tab_size) centred in the item.
+     Checked/selected = red (os_side_tab_down), pressed = down, otherwise up. Same art as os_side_tab. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true"><layer-list><item android:gravity="center" android:width="@dimen/os_side_tab_size" android:height="@dimen/os_side_tab_size" android:drawable="@drawable/os_side_tab_down" /></layer-list></item>
+    <item android:state_selected="true"><layer-list><item android:gravity="center" android:width="@dimen/os_side_tab_size" android:height="@dimen/os_side_tab_size" android:drawable="@drawable/os_side_tab_down" /></layer-list></item>
+    <item android:state_pressed="true"><layer-list><item android:gravity="center" android:width="@dimen/os_side_tab_size" android:height="@dimen/os_side_tab_size" android:drawable="@drawable/os_side_tab_down" /></layer-list></item>
+    <item><layer-list><item android:gravity="center" android:width="@dimen/os_side_tab_size" android:height="@dimen/os_side_tab_size" android:drawable="@drawable/os_side_tab_up" /></layer-list></item>
+</selector>

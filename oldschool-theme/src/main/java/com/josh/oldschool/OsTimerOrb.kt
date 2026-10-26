@@ -80,7 +80,7 @@ class OsTimerOrb @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
                 override fun onAnimationCancel(animation: android.animation.Animator) { cancelled = true }
                 override fun onAnimationEnd(animation: android.animation.Animator) { if (!cancelled) onFinished?.invoke() }
             })
-            start()
+            OsAnimations.play(this)
         }
     }
 
