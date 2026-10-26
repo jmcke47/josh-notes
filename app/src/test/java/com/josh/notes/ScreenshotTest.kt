@@ -171,7 +171,47 @@ class ScreenshotTest {
             .setMessage("Merge keeps all your current notes and takes the newer version of any note that's in both.")
             .setNegativeButton(android.R.string.cancel, null).setPositiveButton("Merge", null).show()
         idle()
-        snapView(d.window!!.decorView, "08-dialog")
+        snapWithDialog(a, d, "08-dialog")
+        d.dismiss(); idle()
+        val info = osDialog(a).setTitle("Backup saved").setMessage("12 notes were written to your backup folder.")
+            .setPositiveButton(android.R.string.ok, null).show()
+        idle()
+        snapWithDialog(a, info, "08b-dialog-continue")
+    }
+
+    @Test fun contextMenu() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        idle()
+        val list = a.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.list)
+        val dv = a.window.decorView
+        dv.measure(View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(2340, View.MeasureSpec.EXACTLY))
+        dv.layout(0, 0, 1080, 2340); idle()
+        list.getChildAt(3).performLongClick(); idle()
+        val d = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+        snapWithDialog(a, d, "24-context-menu")
+    }
+
+    /** Activity + a dialog window composited at the dialog's gravity (Robolectric renders windows separately). */
+    private fun snapWithDialog(a: Activity, d: android.app.Dialog, name: String) {
+        idle()
+        val v = a.window.decorView
+        val w = v.width.takeIf { it > 0 } ?: 1080; val hh = v.height.takeIf { it > 0 } ?: 2340
+        v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(hh, View.MeasureSpec.EXACTLY))
+        v.layout(0, 0, w, hh)
+        val bmp = Bitmap.createBitmap(w, hh, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp); v.draw(c)
+        val dv = d.window!!.decorView
+        val attrs = d.window!!.attributes
+        val full = attrs.width == android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        val dw = if (full) w else (w * 0.88f).toInt()
+        dv.measure(View.MeasureSpec.makeMeasureSpec(dw, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(hh, View.MeasureSpec.AT_MOST))
+        dv.layout(0, 0, dv.measuredWidth, dv.measuredHeight)
+        c.drawColor((if (attrs.dimAmount > 0) (attrs.dimAmount * 255).toInt() else 80) shl 24)
+        val bottom = (attrs.gravity and android.view.Gravity.VERTICAL_GRAVITY_MASK) == android.view.Gravity.BOTTOM
+        val top = if (bottom) hh - dv.measuredHeight - attrs.y else (hh - dv.measuredHeight) / 2
+        c.save(); c.translate(((w - dv.measuredWidth) / 2).toFloat(), top.toFloat()); dv.draw(c); c.restore()
+        File(dir).mkdirs()
+        File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     /** [from] = theme the widget showed before; the new look is then *re-applied* onto it, like a launcher does. */

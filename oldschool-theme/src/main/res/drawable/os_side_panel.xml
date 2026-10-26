@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strip behind the side-panel tab buttons: wood with a carved frame. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:left="5dp" android:top="5dp" android:right="5dp" android:bottom="5dp">
+        <bitmap android:src="@drawable/os_wood_tile" android:tileMode="repeat" android:filter="false" /></item>
+    <item android:drawable="@drawable/os_frame_carved" />
+</layer-list>

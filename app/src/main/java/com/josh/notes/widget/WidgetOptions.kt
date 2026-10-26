@@ -8,7 +8,10 @@ import com.josh.notes.sortedFor
 
 /** What one widget instance shows (kept per widget id). */
 data class WidgetOptions(val mode: Mode = Mode.ALL, val tag: String = "", val noteId: Long = 0L) {
-    enum class Mode { ALL, PINNED, TAG, CHECKLIST }
+    enum class Mode { ALL, PINNED, TAG, CHECKLIST, CHECKLISTS }
+
+    /** Modes switchable from the Old School widget's chat tabs. */
+    val tabbed: Boolean get() = mode == Mode.ALL || mode == Mode.PINNED || mode == Mode.CHECKLISTS
 
     fun encode() = "${mode.name}|$tag|$noteId"
 
@@ -20,6 +23,7 @@ data class WidgetOptions(val mode: Mode = Mode.ALL, val tag: String = "", val no
             Mode.PINNED -> live.filter { it.pinned }
             Mode.TAG -> live.filter { tag in it.tags }
             Mode.CHECKLIST -> notes.filter { it.id == noteId && !it.inTrash }
+            Mode.CHECKLISTS -> live.filter { it.checklist }
         }.sortedFor(SortMode.EDITED)
     }
 
@@ -32,6 +36,7 @@ data class WidgetOptions(val mode: Mode = Mode.ALL, val tag: String = "", val no
         Mode.ALL -> appName
         Mode.PINNED -> "Pinned"
         Mode.TAG -> "#$tag"
+        Mode.CHECKLISTS -> "Checklists"
         Mode.CHECKLIST -> checklist(ctx)?.let { n ->
             val (d, t) = n.progress
             n.displayTitle.ifBlank { "Checklist" } + if (n.secret) "" else "  $d/$t"

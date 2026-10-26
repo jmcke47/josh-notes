@@ -35,7 +35,9 @@ class MainActivity : LockableActivity() {
 
 
 
-    private val adapter by lazy { NotesAdapter(oldSchool) { if (mode == Mode.TRASH) trashActions(it) else openNote(it.id) } }
+    private val adapter by lazy {
+        NotesAdapter(oldSchool, onLongClick = { noteMenu(it) }) { if (mode == Mode.TRASH) trashActions(it) else openNote(it.id) }
+    }
     private lateinit var empty: TextView
     private lateinit var toolbar: MaterialToolbar
     private lateinit var root: View
@@ -48,6 +50,11 @@ class MainActivity : LockableActivity() {
     private var searchQuery = ""
     private enum class Mode { NOTES, ARCHIVE, TRASH }
     private var mode = Mode.NOTES
+    /** Old School chat tabs under the list. */
+    enum class Filter { ALL, PINNED, CHECKLISTS, SECRET }
+    private var filter: Filter
+        get() = runCatching { Filter.valueOf(prefs.getString("os_filter", null) ?: "ALL") }.getOrDefault(Filter.ALL)
+        set(v) = prefs.edit { putString("os_filter", v.name) }
     private var sortMode: SortMode
         get() = runCatching { SortMode.valueOf(prefs.getString("sort", null) ?: "EDITED") }.getOrDefault(SortMode.EDITED)
         set(v) = prefs.edit { putString("sort", v.name) }
@@ -134,37 +141,79 @@ class MainActivity : LockableActivity() {
     private val oldSchool by lazy { AppSettings.oldSchool(this) }
     private val osFab by lazy { findViewById<View>(R.id.os_fab) }
 
-    /** Old School theme: chatbox list, stone tab bar, minimap-style new-note button. */
+    /**
+     * Old School theme: parchment chatbox list with chat tabs (All / Pinned / Checklists / Secret) along its bottom,
+     * a side-panel strip of square stone tabs (Notes, Stats, Quests, Settings), a minimap orb that starts dictation
+     * and a small orb for a new note.
+     */
     private fun setupOldSchool(list: RecyclerView) {
         val d = resources.displayMetrics.density
         fab.visibility = View.GONE
         osFab.visibility = View.VISIBLE
-        osFab.setOnClickListener { openNote(null) }
+        osFab.setOnClickListener { openNote(null, dictate = true) }
+        osNew.visibility = View.VISIBLE
+        osNew.setOnClickListener { openNote(null) }
         findViewById<View>(R.id.os_tabs).visibility = View.VISIBLE
         (list.layoutParams as ViewGroup.MarginLayoutParams).apply {
-            val m = (8 * d).toInt(); setMargins(m, m, m, (56 * d).toInt())
+            val m = (8 * d).toInt(); setMargins(m, m, m, (110 * d).toInt())
         }
-        list.setBackgroundResource(R.drawable.os_chatbox)
-        val p = (6 * d).toInt()
-        list.setPadding(p, p, p, (90 * d).toInt())
-        findViewById<View>(R.id.tab_notes).setOnClickListener { setMode(Mode.NOTES) }
-        findViewById<View>(R.id.tab_archive).setOnClickListener { setMode(Mode.ARCHIVE) }
-        findViewById<View>(R.id.tab_trash).setOnClickListener { setMode(Mode.TRASH) }
+        list.setBackgroundResource(R.drawable.os_chatbox_carved)
+        val p = (10 * d).toInt()
+        list.setPadding(p, p, p, (100 * d).toInt())
+        mapOf(R.id.tab_all to Filter.ALL, R.id.tab_pinned to Filter.PINNED, R.id.tab_lists to Filter.CHECKLISTS,
+            R.id.tab_secret to Filter.SECRET).forEach { (id, f) ->
+            findViewById<View>(id).setOnClickListener { filter = f; updateTabs(); refresh() }
+        }
+        findViewById<View>(R.id.tab_notes).setOnClickListener { filter = Filter.ALL; setMode(Mode.NOTES) }
+        findViewById<View>(R.id.tab_stats).setOnClickListener { startActivity(Intent(this, StatsActivity::class.java)) }
+        findViewById<View>(R.id.tab_quests).setOnClickListener { startActivity(Intent(this, QuestsActivity::class.java)) }
         findViewById<View>(R.id.tab_settings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
-        findViewById<View>(R.id.tab_search).setOnClickListener {
-            if (mode != Mode.NOTES) setMode(Mode.NOTES)
-            toolbar.menu.findItem(R.id.action_search)?.expandActionView()
-        }
         empty.setTextColor(getColor(R.color.os_ink))
         empty.setShadowLayer(0f, 0f, 0f, 0)
     }
 
+    private val osNew by lazy { findViewById<View>(R.id.os_new) }
+
     private fun updateTabs() {
         if (!oldSchool) return
+        val f = filter
+        findViewById<View>(R.id.tab_all).isSelected = f == Filter.ALL
+        findViewById<View>(R.id.tab_pinned).isSelected = f == Filter.PINNED
+        findViewById<View>(R.id.tab_lists).isSelected = f == Filter.CHECKLISTS
+        findViewById<View>(R.id.tab_secret).isSelected = f == Filter.SECRET
         findViewById<View>(R.id.tab_notes).isSelected = mode == Mode.NOTES
-        findViewById<View>(R.id.tab_archive).isSelected = mode == Mode.ARCHIVE
-        findViewById<View>(R.id.tab_trash).isSelected = mode == Mode.TRASH
         osFab.visibility = if (mode == Mode.NOTES) View.VISIBLE else View.GONE
+        osNew.visibility = osFab.visibility
+    }
+
+    /** Long-press on a note: the "Choose Option" menu (Old School) or a plain option list. */
+    private fun noteMenu(n: Note) {
+        val title = n.displayTitle.ifBlank { getString(R.string.untitled) }
+        val opts = mutableListOf<Pair<String, () -> Unit>>()
+        when (mode) {
+            Mode.TRASH -> {
+                opts += "Restore" to { NoteStore.untrash(this, n.id); refresh(); snack("Note restored") }
+                opts += "Delete forever" to { NoteStore.deleteForever(this, n.id); refresh() }
+            }
+            else -> {
+                opts += "Open" to { openNote(n.id) }
+                opts += (if (n.pinned) "Unpin" else "Pin") to { NoteStore.update(this, n.id) { it.copy(pinned = !it.pinned) }; refresh() }
+                opts += (if (n.archived) "Unarchive" else "Archive") to {
+                    NoteStore.update(this, n.id) { it.copy(archived = !it.archived) }; refresh()
+                    snack(if (n.archived) "Note unarchived" else "Note archived")
+                }
+                if (!n.secret) opts += "Share" to {
+                    startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(Intent.EXTRA_TEXT, n.shareText()), null))
+                }
+                opts += "Delete" to {
+                    NoteStore.delete(this, n.id); refresh()
+                    Snackbar.make(root, R.string.note_moved_to_trash, Snackbar.LENGTH_LONG).setAnchorView(anchor())
+                        .setAction(R.string.undo) { NoteStore.restore(this, n); refresh() }.show()
+                }
+            }
+        }
+        osOptions(this, title, opts.map { it.first }) { i -> opts[i].second() }
     }
 
     /** Sync: if the backup folder holds a newer backup from another phone, offer to merge it. */
@@ -225,6 +274,9 @@ class MainActivity : LockableActivity() {
         if (isChangingConfigurations || isFinishing) return
         refresh()
         updateController.onResume()
+        if (oldSchool && AppSettings.levelUps(this)) Stats.consumeSaveXp(this).takeIf { it.isNotEmpty() }
+            ?.let { drops -> root.post { com.josh.oldschool.OsXpDrops.rightSide(this, drops) } }
+        else Stats.consumeSaveXp(this)
         Levels.consumePendingLevel(this).takeIf { it > 0 }?.let { lvl -> root.post { Levels.levelUp(this, lvl) } }
         // A quest finished from the widget: show its scroll now.
         Quests.consumePending(this).takeIf { it != 0L }?.let { id -> NoteStore.get(this, id)?.let { n -> root.post { Quests.completed(this, n) } } }
@@ -311,6 +363,7 @@ class MainActivity : LockableActivity() {
         val q = searchQuery.trim().lowercase()
         val notes = NoteStore.all(this)
             .filter { when (mode) { Mode.TRASH -> it.inTrash; Mode.ARCHIVE -> !it.inTrash && it.archived; Mode.NOTES -> !it.inTrash && !it.archived } }
+            .filter { !oldSchool || when (filter) { Filter.ALL -> true; Filter.PINNED -> it.pinned; Filter.CHECKLISTS -> it.checklist; Filter.SECRET -> it.secret } }
             .filter { q.isEmpty() || it.title.lowercase().contains(q) || it.contentText.lowercase().contains(q) ||
                     it.attachments.any { a -> a.name.lowercase().contains(q) || a.transcript.lowercase().contains(q) } }
             .let { if (mode == Mode.TRASH) it.sortedByDescending { n -> n.deletedAt } else it.sortedFor(sortMode) }
@@ -360,7 +413,7 @@ class MainActivity : LockableActivity() {
         override fun clearView(rv: RecyclerView, vh: RecyclerView.ViewHolder) { super.clearView(rv, vh); vh.itemView.alpha = 1f }
     }
 
-    private class NotesAdapter(val oldSchool: Boolean, val onClick: (Note) -> Unit) : RecyclerView.Adapter<NotesAdapter.VH>() {
+    private class NotesAdapter(val oldSchool: Boolean, val onLongClick: (Note) -> Unit, val onClick: (Note) -> Unit) : RecyclerView.Adapter<NotesAdapter.VH>() {
         private val thumbs = java.util.concurrent.Executors.newFixedThreadPool(2)
         private var items: List<Note> = emptyList()
         init { setHasStableIds(true) }
@@ -438,6 +491,7 @@ class MainActivity : LockableActivity() {
                 }
             }
             h.itemView.setOnClickListener { onClick(n) }
+            h.itemView.setOnLongClickListener { onLongClick(n); true }
         }
     }
 }

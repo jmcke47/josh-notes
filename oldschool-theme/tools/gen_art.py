@@ -53,14 +53,14 @@ def stone_blocks():
 
 stone_blocks()
 # Interface panel texture: mottled grey-brown stone.
-mottled(64, 64, (62, 53, 41), 9, 40, 11).save(OUT+'os_panel_tile.png', optimize=True)
+mottled(64, 64, (50, 41, 31), 8, 40, 11).save(OUT+'os_panel_tile.png', optimize=True)
 # Parchment / scroll texture.
 mottled(128, 128, (214, 196, 154), 12, 70, 21).save(OUT+'os_parchment_tile.png', optimize=True)
 # Chatbox parchment (slightly darker, greyer).
 mottled(128, 64, (190, 174, 136), 9, 50, 31).save(OUT+'os_chat_tile.png', optimize=True)
 
 # Minimap-style round button (original procedural "map").
-def minimap():
+def minimap(plus=True, name='os_minimap.png'):
     S = 64; img = Image.new('RGBA', (S, S), (0, 0, 0, 0)); px = img.load()
     rnd = random.Random(5)
     land = mottled(S, S, (58, 92, 44), 14, 30, 41).load()
@@ -86,17 +86,24 @@ def minimap():
     d.ellipse([38, 40, 50, 49], fill=(40, 70, 140))
     d.rectangle([16, 18, 21, 23], fill=(120, 110, 100)); d.rectangle([17, 19, 20, 22], fill=(160, 150, 136))
     # yellow plus with black outline in the centre
-    for (x0, y0, x1, y1) in [(28, 20, 35, 43), (20, 28, 43, 35)]:
-        d.rectangle([x0-1, y0-1, x1+1, y1+1], fill=(0, 0, 0))
-    for (x0, y0, x1, y1) in [(29, 21, 34, 42), (21, 29, 42, 34)]:
-        d.rectangle([x0, y0, x1, y1], fill=(255, 255, 0))
-    d.rectangle([29, 21, 30, 42], fill=(255, 255, 160)); d.rectangle([21, 29, 42, 30], fill=(255, 255, 160))
+    if plus:
+        for (x0, y0, x1, y1) in [(28, 20, 35, 43), (20, 28, 43, 35)]:
+            d.rectangle([x0-1, y0-1, x1+1, y1+1], fill=(0, 0, 0))
+        for (x0, y0, x1, y1) in [(29, 21, 34, 42), (21, 29, 42, 34)]:
+            d.rectangle([x0, y0, x1, y1], fill=(255, 255, 0))
+        d.rectangle([29, 21, 30, 42], fill=(255, 255, 160)); d.rectangle([21, 29, 42, 30], fill=(255, 255, 160))
+    else:
+        # plain map: white "you are here" dot plus a few yellow/white map dots (original)
+        d.rectangle([31, 31, 32, 32], fill=(255, 255, 255))
+        for (x, y) in [(22, 26), (44, 16), (40, 52), (14, 46)]: d.rectangle([x, y, x+1, y+1], fill=(255, 255, 0))
+        for (x, y) in [(28, 47), (47, 36)]: d.rectangle([x, y, x+1, y+1], fill=(255, 255, 255))
     # re-cut to circle
     for y in range(S):
         for x in range(S):
             if math.hypot(x-c, y-c) > 31.5: px[x, y] = (0, 0, 0, 0)
-    img.resize((192, 192), Image.NEAREST).save(OUT+'os_minimap.png', optimize=True)
+    img.resize((192, 192), Image.NEAREST).save(OUT+name, optimize=True)
 minimap()
+minimap(False, 'os_minimap_plain.png')
 
 # 16x16 icons from character maps.
 PAL = {'.': None, 'k': (0, 0, 0), 'w': (255, 255, 255), 'y': (255, 255, 0), 'o': (255, 152, 31), 'b': (122, 84, 40),

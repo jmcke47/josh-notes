@@ -72,7 +72,7 @@ class QuickWidgetProvider : AppWidgetProvider() {
             for (id in BODIES) views.setViewVisibility(id, if (id == bodyId && body.isNotEmpty()) View.VISIBLE else View.GONE)
             if (os) {
                 val w = ((WidgetTheme.widthDp(context, widgetId).coerceAtMost(260) - 40) * context.resources.displayMetrics.density).toInt()
-                val t = if (pixel) runCatching { PixelText.render(context, "$title:", 14f, context.getColor(R.color.os_ink), w, shadow = false) }.getOrNull() else null
+                val t = if (pixel) runCatching { PixelText.render(context, "$title:", 14f, context.getColor(R.color.os_ink), w, shadow = false, bold = true) }.getOrNull() else null
                 val b = if (pixel && body.isNotEmpty()) runCatching {
                     PixelText.render(context, body, 12f, context.getColor(R.color.os_chat_blue), w, maxLines = 6, shadow = false)
                 }.getOrNull() else null

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Beige parchment chatbox inside a carved, riveted wood frame (main list panel). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:left="5dp" android:top="5dp" android:right="5dp" android:bottom="5dp">
+        <bitmap android:src="@drawable/os_chat_tile" android:tileMode="repeat" android:filter="false" /></item>
+    <item android:left="7dp" android:top="7dp" android:right="7dp" android:bottom="7dp">
+        <shape><solid android:color="#00000000" /><stroke android:width="2dp" android:color="#33593A12" /></shape></item>
+    <item android:drawable="@drawable/os_frame_carved" />
+</layer-list>

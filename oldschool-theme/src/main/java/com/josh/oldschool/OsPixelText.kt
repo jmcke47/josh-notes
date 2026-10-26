@@ -11,15 +11,16 @@ import android.text.TextUtils
 import android.util.TypedValue
 
 /**
+ * Pixel-text-to-bitmap helper for RemoteViews (home-screen widgets).
  * Launchers inflate home-screen widgets in a context that can't load an app's font files, so pixel-font text for
  * RemoteViews is pre-rendered into bitmaps (with the theme's hard black drop shadow) and shown in ImageViews.
  * Bitmaps are rendered at device density so they display 1:1.
  */
 object OsPixelText {
     /** Largest size in [minSp]..[sizeSp] at which [text] fits on one line in [maxWidthPx]. */
-    fun fitSize(ctx: Context, text: CharSequence, sizeSp: Float, minSp: Float, maxWidthPx: Int): Float {
+    fun fitSize(ctx: Context, text: CharSequence, sizeSp: Float, minSp: Float, maxWidthPx: Int, bold: Boolean = false): Float {
         val dm = ctx.resources.displayMetrics
-        val paint = TextPaint(TextPaint.ANTI_ALIAS_FLAG).apply { typeface = Os.font(ctx) }
+        val paint = TextPaint(TextPaint.ANTI_ALIAS_FLAG).apply { typeface = Os.font(ctx, bold) }
         var sp = sizeSp
         while (sp > minSp) {
             paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, dm)
@@ -31,11 +32,11 @@ object OsPixelText {
 
     /** @param maxLines 1 = single ellipsized line. Returns null for blank text. */
     fun render(ctx: Context, text: CharSequence, sizeSp: Float, color: Int, maxWidthPx: Int, maxLines: Int = 1,
-               shadow: Boolean = true, strike: Boolean = false): Bitmap? {
+               shadow: Boolean = true, strike: Boolean = false, bold: Boolean = false): Bitmap? {
         if (text.isBlank()) return null
         val dm = ctx.resources.displayMetrics
         val paint = TextPaint(TextPaint.ANTI_ALIAS_FLAG).apply {
-            typeface = Os.font(ctx); textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp, dm); this.color = color
+            typeface = Os.font(ctx, bold); textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp, dm); this.color = color
             isStrikeThruText = strike
         }
         val shadowPx = if (shadow) (1.5f * dm.density).coerceAtLeast(1f) else 0f

@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Carved dark-wood header bar with riveted ends. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item><bitmap android:src="@drawable/os_panel_tile" android:tileMode="repeat" android:filter="false" /></item>
+    <item><bitmap android:src="@drawable/os_wood_tile" android:tileMode="repeat" android:filter="false" /></item>
+    <item android:gravity="top" android:height="1dp"><shape><solid android:color="#FF7A6446" /></shape></item>
+    <item android:gravity="bottom" android:height="3dp"><shape><solid android:color="#FF100B07" /></shape></item>
     <item android:gravity="bottom" android:height="1dp"><shape><solid android:color="#FF000000" /></shape></item>
-    <item android:gravity="bottom" android:height="3dp" android:bottom="1dp"><shape><solid android:color="#FF1C1711" /></shape></item>
-    <item android:gravity="top" android:height="1dp"><shape><solid android:color="#FF7A6C56" /></shape></item>
+    <item android:gravity="center_vertical|left" android:left="6dp" android:width="5dp" android:height="5dp" android:drawable="@drawable/os_rivet" />
+    <item android:gravity="center_vertical|right" android:right="6dp" android:width="5dp" android:height="5dp" android:drawable="@drawable/os_rivet" />
 </layer-list>

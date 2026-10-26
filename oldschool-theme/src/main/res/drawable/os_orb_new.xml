@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Small stone orb with a yellow plus ("new"). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/os_orb" />
+    <item android:left="12dp" android:top="12dp" android:right="12dp" android:bottom="12dp">
+        <bitmap android:src="@drawable/os_ic_plus" android:filter="false" android:gravity="fill" /></item>
+</layer-list>

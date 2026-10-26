@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Foreground frame around a whole screen (transparent centre). Os.applyScreenFrame(activity) sets it. -->
+<nine-patch xmlns:android="http://schemas.android.com/apk/res/android" android:src="@drawable/os_frame_carved" android:filter="false" />

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recessed stone slot for skill tiles (dark top-left, light bottom-right). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true"><layer-list>
+        <item><shape><solid android:color="#FF000000" /></shape></item>
+        <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp"><shape><solid android:color="#FF4A3E2E" /></shape></item>
+    </layer-list></item>
+    <item><layer-list>
+        <item><shape><solid android:color="#FF000000" /></shape></item>
+        <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp"><shape><solid android:color="#FF6E5E48" /></shape></item>
+        <item android:left="1dp" android:top="1dp" android:right="2dp" android:bottom="2dp"><shape><solid android:color="#FF0E0A06" /></shape></item>
+        <item android:left="3dp" android:top="3dp" android:right="2dp" android:bottom="2dp">
+            <bitmap android:src="@drawable/os_panel_tile" android:tileMode="repeat" android:filter="false" /></item>
+        <item android:left="3dp" android:top="3dp" android:right="2dp" android:bottom="2dp"><shape><solid android:color="#33000000" /></shape></item>
+    </layer-list></item>
+</selector>

@@ -10,6 +10,7 @@ import java.util.concurrent.Executors
 
 /** Full-screen image viewer (tap to close). */
 class ImageViewerActivity : LockableActivity() {
+    override val screenFrame get() = false
     companion object { const val EXTRA_PATH = "path"; const val EXTRA_NAME = "name" }
 
     override fun onCreate(savedInstanceState: Bundle?) {

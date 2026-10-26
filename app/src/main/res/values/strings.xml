@@ -82,4 +82,12 @@
     <string name="tile_dictate">Dictate note</string>
     <string name="quick_widget_description">Quick add and your last note</string>
     <string name="widget_config_title">Widget options</string>
+    <string name="tab_all">All</string>
+    <string name="tab_pinned">Pinned</string>
+    <string name="tab_checklists">Checklists</string>
+    <string name="tab_secret">Secret</string>
+    <string name="side_notes">Notes</string>
+    <string name="quests">Quests</string>
+    <string name="quest_journal">Quest journal</string>
+    <string name="tab_lists_short">Lists</string>
 </resources>

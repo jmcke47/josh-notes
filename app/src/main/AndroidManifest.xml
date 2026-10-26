@@ -74,6 +74,9 @@
         <activity
             android:name=".StatsActivity"
             android:exported="false" />
+        <activity
+            android:name=".QuestsActivity"
+            android:exported="false" />
 
         <activity
             android:name=".widget.WidgetConfigActivity"

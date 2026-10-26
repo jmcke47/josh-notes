@@ -111,3 +111,123 @@ def orb():
                 px[x, y] = col+(255,)
     return img.resize((N*S, N*S), Image.NEAREST)
 orb().save(OUT9+'os_orb.png', optimize=True)
+
+# ---------------------------------------------------------------- v1.1: 2007-style carved frames & side panel
+def wood_tile():
+    """Dark brown-black wood with horizontal grain (tileable)."""
+    W, H = 64, 64; rnd = random.Random(77)
+    img = Image.new('RGB', (W, H), (40, 31, 21)); px = img.load()
+    for y in range(H):
+        band = math.sin(y * 0.9) * 4 + math.sin(y * 0.23 + 1) * 5
+        for x in range(W):
+            n = band + math.sin((x + y * 3) * 0.098) * 2 + rnd.uniform(-3, 3)
+            px[x, y] = tuple(clamp(c + n) for c in (40, 31, 21))
+    for _ in range(26):  # dark grain streaks
+        y = rnd.randrange(H); x0 = rnd.randrange(W); ln = rnd.randint(6, 22)
+        for i in range(ln): px[(x0 + i) % W, y] = tuple(clamp(c - 12) for c in px[(x0 + i) % W, y])
+    for _ in range(14):  # light grain
+        y = rnd.randrange(H); x0 = rnd.randrange(W); ln = rnd.randint(4, 12)
+        for i in range(ln): px[(x0 + i) % W, y] = tuple(clamp(c + 10) for c in px[(x0 + i) % W, y])
+    return img
+WOOD = wood_tile(); WOOD.save(OUT + 'os_wood_tile.png', optimize=True)
+
+def rivet(img, cx, cy):
+    """3x3 domed rivet (+ dark rim) centred at (cx, cy)."""
+    d = ImageDraw.Draw(img)
+    for (x, y) in [(cx-1, cy-2), (cx, cy-2), (cx+1, cy-2), (cx-2, cy-1), (cx+2, cy-1), (cx-2, cy), (cx+2, cy), (cx-2, cy+1), (cx+2, cy+1), (cx-1, cy+2), (cx, cy+2), (cx+1, cy+2)]:
+        img.putpixel((x, y), (14, 10, 6, 255))
+    d.rectangle([cx-1, cy-1, cx+1, cy+1], fill=(122, 110, 92, 255))
+    img.putpixel((cx-1, cy-1), (214, 204, 178, 255)); img.putpixel((cx, cy-1), (170, 158, 134, 255))
+    img.putpixel((cx-1, cy), (170, 158, 134, 255)); img.putpixel((cx+1, cy+1), (70, 62, 50, 255))
+
+def carved(size=24, band=7, rivets=True, centre=None):
+    """Carved wood frame: black outline, light bevel, wood band, dark bevel, black inner line; rivets in corners."""
+    N = size; img = Image.new('RGBA', (N, N), (0, 0, 0, 0)); px = img.load()
+    for y in range(N):
+        for x in range(N):
+            e = min(x, y, N-1-x, N-1-y)
+            if e >= band:
+                if centre: px[x, y] = centre
+                continue
+            if e == 0 or e == band-1: c = (0, 0, 0)
+            elif e == 1: c = (122, 100, 70) if (x < N-1-y and x <= y or y < x and y < N-1-x) and (x <= y or y < N-1-x) and not (x > y and N-1-x < y) else (16, 11, 7)
+            elif e == band-2: c = (16, 11, 7) if (x <= y and x < N-1-y) or (y < x and y < N-1-x) else (106, 88, 62)
+            else: c = WOOD.getpixel((x % 64, y % 64))
+            px[x, y] = c + (255,)
+    # bevel direction: top/left light, bottom/right dark on the outer edge
+    for i in range(1, N-1):
+        px[i, 1] = (122, 100, 70, 255); px[1, i] = (122, 100, 70, 255)
+        px[i, N-2] = (16, 11, 7, 255); px[N-2, i] = (16, 11, 7, 255)
+        b = band-2
+        if b < i < N-1-b:
+            px[i, b] = (16, 11, 7, 255); px[b, i] = (16, 11, 7, 255)
+            px[i, N-1-b] = (106, 88, 62, 255); px[N-1-b, i] = (106, 88, 62, 255)
+    if rivets:
+        m = band // 2
+        for (cx, cy) in ((m, m), (N-1-m, m), (m, N-1-m), (N-1-m, N-1-m)): rivet(img, cx, cy)
+    return img
+
+fr = carved()
+nine(fr, 'os_frame_carved', (10, 14, 10, 14), (7, 17, 7, 17))
+nine(carved(centre=(50, 41, 31, 255)), 'os_frame_carved_filled', (10, 14, 10, 14), (7, 17, 7, 17))
+nine(carved(size=16, band=5, rivets=False), 'os_frame_thin', (6, 10, 6, 10), (5, 11, 5, 11))
+r = Image.new('RGBA', (5, 5), (0, 0, 0, 0)); rivet(r, 2, 2); r.resize((15, 15), Image.NEAREST).save(OUT9 + 'os_rivet.png', optimize=True)
+
+# Side-panel square stone tab: normal (stone) and selected (red), carved rim.
+def side_tab(face, light, dark, rim=(28, 21, 14)):
+    N = 16; img = Image.new('RGBA', (N, N), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, N-1, N-1], fill=(0, 0, 0, 255))
+    d.rectangle([1, 1, N-2, N-2], fill=rim + (255,))
+    d.rectangle([2, 2, N-3, N-3], fill=dark + (255,))
+    d.rectangle([2, 2, N-4, N-4], fill=light + (255,))
+    d.rectangle([3, 3, N-4, N-4], fill=face + (255,))
+    for (x, y) in ((0, 0), (N-1, 0), (0, N-1), (N-1, N-1)): img.putpixel((x, y), (0, 0, 0, 0))
+    return img
+nine(side_tab((62, 52, 40), (112, 98, 76), (22, 17, 11)), 'os_side_tab_up', (6, 10, 6, 10), (4, 12, 4, 12))
+nine(side_tab((116, 34, 20), (178, 74, 50), (54, 14, 8)), 'os_side_tab_down', (6, 10, 6, 10), (4, 12, 4, 12))
+
+# Chat tabs under the chatbox: small stone tab with cut top corners; selected = lighter stone, gold edge.
+def chat_tab(face, light, dark, edge=None):
+    W, H = 14, 10; img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.rectangle([0, 1, W-1, H-1], fill=(0, 0, 0, 255)); d.line([1, 0, W-2, 0], fill=(0, 0, 0, 255))
+    d.rectangle([1, 1, W-2, H-2], fill=dark + (255,)); d.rectangle([1, 1, W-3, H-3], fill=light + (255,))
+    d.rectangle([2, 2, W-3, H-3], fill=face + (255,))
+    if edge: d.line([2, H-3, W-3, H-3], fill=edge + (255,))
+    return img
+nine(chat_tab((58, 48, 36), (104, 90, 70), (20, 15, 10)), 'os_chat_tab_up', (5, 9, 4, 6), (3, 11, 2, 8))
+nine(chat_tab((96, 82, 62), (150, 132, 104), (34, 27, 18), edge=(200, 160, 64)), 'os_chat_tab_down', (5, 9, 4, 6), (3, 11, 2, 8))
+
+# More 16x16 icons (same palette/format as ICONS in gen_art.py).
+ICONS2 = {
+ 'os_ic_stats': [  # skill bars on a little stone plinth
+  "................", "............kk..", "...........kyyk.", "...........kyyk.", "......kk...kyyk.", ".....keek..kyyk.",
+  ".....keek..kyyk.", "..kk.keek..kyyk.", ".krrkkeek..kyyk.", ".krrkkeek..kyyk.", ".krrkkeek..kyyk.", ".krrkkeek..kyyk.",
+  "kkkkkkkkkkkkkkkk", "kGLLLLLLLLLLLLGk", "kkkkkkkkkkkkkkkk", "................"],
+ 'os_ic_quest': [  # treasure map with a red X
+  "................", "..kkkkkkkkkkkk..", ".kpppPpppppPppk.", ".kpPppppppppppk.", ".kppp.pp.ppPppk.", ".kpp.pppp.pppPk.",
+  ".kp.pppppprkrpk.", ".kppPpppppkrkpk.", ".kpppp.ppprkrpk.", ".kPpppp.pppppk..", ".kpppppp.pPppk..", ".kpppPppppppppk.",
+  ".kppppppPpppppk.", "..kkkkkkkkkkkk..", "................", "................"],
+ 'os_ic_tag': [  # brown label tag with string
+  "................", "..........kk....", ".........k..k...", "........k....k..", ".....kkkk.kk.k..", "....kppppk..k...",
+  "...kppkkppk.k...", "..kpppkkpppk....", ".kppppppppppk...", ".kpPpppppppk....", "..kpPppppppk....", "...kpPppppk.....",
+  "....kpPppk......", ".....kppk.......", "......kk........", "................"],
+ 'os_ic_mic': [  # stone/silver microphone
+  "................", "......kkkk......", ".....klllLk.....", ".....kwllLk.....", ".....klllLk.....", ".....klllLk.....",
+  "...k.klllLk.k...", "...k.kLLLLk.k...", "...k..kkkk..k...", "....k......k....", ".....kkkkkk.....", ".......kk.......",
+  ".......kk.......", ".....kkkkkk.....", "................", "................"],
+ 'os_ic_plus': [
+  "................", "................", "......kkkk......", "......kyyk......", "......kyyk......", "......kyyk......",
+  "..kkkkkyykkkkk..", "..kyyyyyyyyyyk..", "..kyyyyyyyyyyk..", "..kkkkkyykkkkk..", "......kyyk......", "......kyyk......",
+  "......kyyk......", "......kkkk......", "................", "................"],
+ 'os_ic_memo': [  # lute-ish horn = "Recording"
+  "................", "...........kk...", "..........kook..", ".........kook...", "........kook....", ".......kook.....",
+  "..kkk.kook......", ".kbbbkook.......", "kbBbbbkk........", "kbbkkbbk........", "kbbkkbbk........", "kbbbbbBk........",
+  ".kbbbbk.........", "..kkkk..........", "................", "................"],
+}
+for name, rows in ICONS2.items():
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0)); px = img.load()
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row[:16]):
+            col = PAL.get(ch)
+            if col: px[x, y] = col + (255,)
+    img.resize((48, 48), Image.NEAREST).save(OUT + name + '.png', optimize=True)

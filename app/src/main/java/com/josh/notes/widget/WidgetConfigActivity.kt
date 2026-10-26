@@ -62,6 +62,7 @@ class WidgetConfigActivity : LockableActivity() {
         mode.check(when (cur.mode) {
             WidgetOptions.Mode.ALL -> R.id.mode_all; WidgetOptions.Mode.PINNED -> R.id.mode_pinned
             WidgetOptions.Mode.TAG -> R.id.mode_tag; WidgetOptions.Mode.CHECKLIST -> R.id.mode_checklist
+            WidgetOptions.Mode.CHECKLISTS -> R.id.mode_checklists
         })
         (0 until tags.childCount).map { tags.getChildAt(it) as Chip }.let { chips ->
             (chips.firstOrNull { it.tag == cur.tag } ?: chips.firstOrNull())?.isChecked = true
@@ -79,6 +80,7 @@ class WidgetConfigActivity : LockableActivity() {
     /** The options currently picked on screen (null if incomplete). */
     fun picked(): WidgetOptions? = when (mode.checkedRadioButtonId) {
         R.id.mode_pinned -> WidgetOptions(WidgetOptions.Mode.PINNED)
+        R.id.mode_checklists -> WidgetOptions(WidgetOptions.Mode.CHECKLISTS)
         R.id.mode_tag -> tags.checkedChipId.takeIf { it != View.NO_ID }?.let { findViewById<Chip>(it).tag as String }
             ?.let { WidgetOptions(WidgetOptions.Mode.TAG, tag = it) }
         R.id.mode_checklist -> lists.checkedRadioButtonId.takeIf { it != View.NO_ID }?.let { findViewById<RadioButton>(it).tag as Long }

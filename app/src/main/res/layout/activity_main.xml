@@ -46,78 +46,76 @@
         android:text="@string/new_note"
         app:icon="@drawable/ic_add" />
 
-    <!-- Old School theme: minimap-style round button + stone tab bar (hidden otherwise). -->
+    <!-- Old School theme (hidden otherwise): minimap orb = dictate, small orb = new note,
+         chat tabs under the parchment list, and a side-panel strip of square stone tab buttons. -->
     <ImageButton
         android:id="@+id/os_fab"
-        android:layout_width="76dp"
-        android:layout_height="76dp"
+        android:layout_width="@dimen/os_minimap_size"
+        android:layout_height="@dimen/os_minimap_size"
         android:layout_gravity="bottom|end"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="64dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="112dp"
+        android:background="@null"
+        android:contentDescription="@string/dictate"
+        android:scaleType="fitCenter"
+        android:src="@drawable/os_minimap_mic"
+        android:visibility="gone" />
+    <ImageButton
+        android:id="@+id/os_new"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="104dp"
+        android:layout_marginBottom="116dp"
         android:background="@null"
         android:contentDescription="@string/new_note"
         android:scaleType="fitCenter"
-        android:src="@drawable/os_minimap_fab"
+        android:src="@drawable/os_orb_new"
         android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/os_tabs"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@drawable/os_panel"
-        android:orientation="horizontal"
-        android:padding="3dp"
+        android:orientation="vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp"
         android:visibility="gone">
-        <ImageButton
-            android:id="@+id/tab_notes"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/os_tab"
-            android:contentDescription="@string/app_name"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/os_ic_scroll" />
-        <ImageButton
-            android:id="@+id/tab_search"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/os_tab"
-            android:contentDescription="@string/search"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/os_ic_magnifier" />
-        <ImageButton
-            android:id="@+id/tab_archive"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/os_tab"
-            android:contentDescription="@string/show_archive"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/os_ic_chest" />
-        <ImageButton
-            android:id="@+id/tab_trash"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/os_tab"
-            android:contentDescription="@string/show_trash"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/os_ic_bin" />
-        <ImageButton
-            android:id="@+id/tab_settings"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/os_tab"
-            android:contentDescription="@string/settings"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/os_ic_wrench" />
+        <LinearLayout
+            android:id="@+id/os_chat_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/os_chat_tab_height"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+            <TextView android:id="@+id/tab_all" style="@style/Widget.OldSchool.ChatTab" android:layout_width="0dp"
+                android:layout_height="match_parent" android:layout_weight="1" android:text="@string/tab_all" />
+            <TextView android:id="@+id/tab_pinned" style="@style/Widget.OldSchool.ChatTab" android:layout_width="0dp"
+                android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="2dp" android:text="@string/tab_pinned" />
+            <TextView android:id="@+id/tab_lists" style="@style/Widget.OldSchool.ChatTab" android:layout_width="0dp"
+                android:layout_height="match_parent" android:layout_weight="1.3" android:layout_marginStart="2dp" android:text="@string/tab_checklists" />
+            <TextView android:id="@+id/tab_secret" style="@style/Widget.OldSchool.ChatTab" android:layout_width="0dp"
+                android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="2dp" android:text="@string/tab_secret" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/os_side"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/os_side_panel"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="8dp">
+            <ImageButton android:id="@+id/tab_notes" style="@style/Widget.OldSchool.SideTab"
+                android:contentDescription="@string/side_notes" android:src="@drawable/os_ic_scroll" />
+            <ImageButton android:id="@+id/tab_stats" style="@style/Widget.OldSchool.SideTab" android:layout_marginStart="10dp"
+                android:contentDescription="@string/stats" android:src="@drawable/os_ic_stats" />
+            <ImageButton android:id="@+id/tab_quests" style="@style/Widget.OldSchool.SideTab" android:layout_marginStart="10dp"
+                android:contentDescription="@string/quests" android:src="@drawable/os_ic_quest" />
+            <ImageButton android:id="@+id/tab_settings" style="@style/Widget.OldSchool.SideTab" android:layout_marginStart="10dp"
+                android:contentDescription="@string/settings" android:src="@drawable/os_ic_wrench" />
+        </LinearLayout>
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

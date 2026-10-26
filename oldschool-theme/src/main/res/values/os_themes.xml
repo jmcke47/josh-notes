@@ -3,8 +3,8 @@
          black drop shadow, cyan secondary text, orange-red links. All artwork is original. -->
     <style name="Theme.OldSchool" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowBackground">@drawable/os_stone_bg</item>
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="colorPrimary">@color/os_orange</item>
         <item name="colorOnPrimary">@color/os_ink</item>
         <item name="colorPrimaryContainer">@color/os_panel_light</item>
@@ -117,8 +117,8 @@
     </style>
     <style name="Widget.OldSchool.TextView" parent="Widget.MaterialComponents.TextView">
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="Widget.OldSchool.TextView.Ink" parent="Widget.MaterialComponents.TextView">
@@ -130,15 +130,15 @@
     <style name="Widget.OldSchool.RadioButton" parent="Widget.Material3.CompoundButton.RadioButton">
         <item name="android:textColor">@color/os_yellow</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="Widget.OldSchool.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
         <item name="android:textColor">@color/os_yellow</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="Widget.OldSchool.Card" parent="Widget.Material3.CardView.Outlined">
@@ -161,8 +161,8 @@
         <item name="android:layout_marginTop">4dp</item>
         <item name="android:layout_marginBottom">4dp</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <!-- "Click here to continue" style text link. -->
@@ -170,8 +170,8 @@
         <item name="android:textColor">@color/os_link</item>
         <item name="iconTint">@color/os_link</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="Widget.OldSchool.Button.LinkInk" parent="Widget.Material3.Button.TextButton">
@@ -189,12 +189,17 @@
     <style name="Widget.OldSchool.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="android:background">@drawable/os_toolbar_bg</item>
         <item name="titleTextAppearance">@style/TextAppearance.OldSchool.ToolbarTitle</item>
-        <item name="titleTextColor">@color/os_orange</item>
+        <item name="titleTextColor">@color/os_yellow</item>
         <item name="subtitleTextColor">@color/os_yellow</item>
     </style>
     <style name="TextAppearance.OldSchool.ToolbarTitle" parent="TextAppearance.OldSchool.TitleLarge">
-        <item name="android:textColor">@color/os_orange</item>
-        <item name="android:textSize">24sp</item>
+        <item name="android:textColor">@color/os_yellow</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:shadowColor">#FF000000</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
+        <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="Widget.OldSchool.Snackbar" parent="Widget.Material3.Snackbar">
         <item name="android:background">@drawable/os_chatbox</item>
@@ -202,7 +207,7 @@
     </style>
     <style name="Widget.OldSchool.SnackbarText" parent="Widget.Material3.Snackbar.TextView">
         <item name="android:textColor">@color/os_ink</item>
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
     </style>
     <style name="ThemeOverlay.OldSchool.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorSurface">@color/os_panel</item>
@@ -214,262 +219,281 @@
         <item name="android:textColorAlertDialogListItem">@color/os_yellow</item>
         <item name="materialAlertDialogTitleTextStyle">@style/OldSchool.DialogTitle</item>
         <item name="materialAlertDialogBodyTextStyle">@style/OldSchool.DialogBody</item>
-        <item name="buttonBarPositiveButtonStyle">@style/Widget.OldSchool.Button.Link</item>
-        <item name="buttonBarNegativeButtonStyle">@style/Widget.OldSchool.Button.Link</item>
-        <item name="buttonBarNeutralButtonStyle">@style/Widget.OldSchool.Button.Link</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.OldSchool.Button.Dialog</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.OldSchool.Button.Dialog</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.OldSchool.Button.Dialog</item>
         <item name="shapeAppearanceOverlay">@style/Shape.OldSchool</item>
     </style>
     <style name="OldSchool.DialogTitle" parent="MaterialAlertDialog.Material3.Title.Text">
-        <item name="android:textColor">@color/os_orange</item>
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:textColor">@color/os_yellow</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="OldSchool.DialogBody" parent="MaterialAlertDialog.Material3.Body.Text">
-        <item name="android:textColor">@color/os_yellow</item>
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:textColor">@color/os_orange</item>
+        <item name="android:fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="TextAppearance.OldSchool.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.OldSchool.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
     </style>
     <style name="TextAppearance.OldSchool.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
     </style>
     <style name="TextAppearance.OldSchool.BodySmall" parent="TextAppearance.Material3.BodySmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.BodySmall" parent="TextAppearance.Material3.BodySmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
     </style>
     <style name="TextAppearance.OldSchool.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
     </style>
     <style name="TextAppearance.OldSchool.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
         <item name="android:shadowRadius">0</item>
     </style>
     <style name="TextAppearance.OldSchool.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#FF000000</item>
-        <item name="android:shadowDx">2.5</item>
-        <item name="android:shadowDy">2.5</item>
+        <item name="android:shadowDx">3.5</item>
+        <item name="android:shadowDy">3.5</item>
         <item name="android:shadowRadius">0.01</item>
     </style>
     <style name="TextAppearance.OldSchool.Ink.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
-        <item name="android:fontFamily">@font/os_pixelify_sans</item>
-        <item name="fontFamily">@font/os_pixelify_sans</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="fontFamily">@font/os_font</item>
         <item name="android:shadowColor">#00000000</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>

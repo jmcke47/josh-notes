@@ -275,9 +275,12 @@ class SettingsActivity : LockableActivity() {
             }
         }
         findViewById<View>(R.id.font_credit).setOnClickListener {
-            val text = runCatching { assets.open("licenses/os_PixelifySans-OFL.txt").bufferedReader().readText() }.getOrDefault("")
-            osDialog(this).setTitle("Pixelify Sans — SIL OFL 1.1")
-                .setMessage(text).setPositiveButton(android.R.string.ok, null).show()
+            val fonts = listOf("OS Small" to "licenses/os_font-OFL.txt", "Pixelify Sans" to "licenses/os_PixelifySans-OFL.txt")
+            osOptions(this, "Font licences", fonts.map { "Read licence: ${it.first}" }, target = false) { i ->
+                val text = runCatching { assets.open(fonts[i].second).bufferedReader().readText() }.getOrDefault("")
+                osDialog(this).setTitle(fonts[i].first + " — SIL OFL 1.1")
+                    .setMessage(text).setPositiveButton(android.R.string.ok, null).show()
+            }
         }
 
         // Backup

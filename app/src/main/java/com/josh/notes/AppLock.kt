@@ -87,10 +87,16 @@ open class LockableActivity : AppCompatActivity() {
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
+        // Old School: carved, riveted wood frame around the whole screen.
+        if (AppSettings.oldSchool(this) && screenFrame)
+            (findViewById<android.view.ViewGroup>(android.R.id.content).getChildAt(0))?.let { com.josh.oldschool.Os.applyScreenFrame(it) }
         if (AppLock.needsUnlock(this)) showCover()
     }
 
     private var appliedTheme: String? = null
+
+    /** Draw the Old School screen frame (off for translucent/dialog-like screens). */
+    open val screenFrame: Boolean get() = true
 
     /** Volume-key dictation shortcut for this screen (null = keys untouched). */
     open val volumeShortcut: VolumeKeyDictation? get() = null

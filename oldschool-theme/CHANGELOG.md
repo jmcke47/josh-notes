@@ -1,5 +1,22 @@
 # Old School theme kit — changelog
 
+## 1.1.0 (2026-10-26)
+The 2007-era redesign. Original art only; backwards compatible with 1.0 APIs.
+- Font: **OS Small** regular + bold, self-drawn pixel font (cap height 7px, legible small text), SIL OFL 1.1
+  (`assets/licenses/os_font-OFL.txt`); theme font is now `@font/os_font`; `Os.font(ctx, bold)`.
+- Frames: carved dark wood/stone 9-patches with bevelled edges and riveted corners (`os_frame_carved(_filled)`,
+  `os_frame_thin`, `os_rivet`, `os_wood_tile`), `os_screen_frame` + `Os.applyScreenFrame(root)`; toolbar now wood + rivets.
+- Chatbox list (`os_chatbox_carved`) with bottom chat tabs (`Widget.OldSchool.ChatTab`); side-panel strip of square stone
+  tabs (`Widget.OldSchool.SideTab`, `os_side_panel`); new icons stats/quest/tag/mic/plus/memo.
+- Colours: `os_header` #FFFF00 + `TextAppearance.OldSchool.Header` (1px black shadow), orange/cyan/white highlights,
+  wood, dialog red/blue, quest red/yellow/green. Darker panel tile.
+- Dialogs: `OsDialogs.chat` ("Click here to continue"), `OsDialogs.options` ("Select an Option"), `OsDialogs.alert` /
+  `OsAlertBuilder` drop-in; context menu gets a Cancel row; long messages scroll.
+- Stone buttons textured with an inverted bevel when pressed; dialog button style.
+- `OsSkillTile` redesigned (recessed slot, level/base level) + `setTotal`; `OsXpDrops.rightSide` staggered right-edge drops.
+- Minimap orbs `os_minimap_mic`, `os_minimap_plain`, `os_orb_new`.
+- `OsPixelText.render/fitSize` gain `bold`; documented as the pixel-text-to-bitmap helper for RemoteViews.
+
 ## 1.0.0 (2026-10-26)
 First shared release (extracted from Josh Notes v1.5.0; Josh Notes consumes it unchanged-looking).
 - Tokens: `os_colors.xml`, `os_dimens.xml`, `os_attrs.xml`; full `Theme.OldSchool` (+ `.Translucent`), `ThemeOverlay.OldSchool.Parchment`, `ThemeOverlay.OldSchool.Dialog`, all `TextAppearance.OldSchool.*` / `.Ink.*`.

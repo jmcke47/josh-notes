@@ -36,6 +36,8 @@
                     android:saveEnabled="false" android:text="All notes" />
                 <RadioButton android:id="@+id/mode_pinned" android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:saveEnabled="false" android:text="Pinned notes only" />
+                <RadioButton android:id="@+id/mode_checklists" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:saveEnabled="false" android:text="All checklists" />
                 <RadioButton android:id="@+id/mode_tag" android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:saveEnabled="false" android:text="Notes with a #tag" />
                 <RadioButton android:id="@+id/mode_checklist" android:layout_width="match_parent" android:layout_height="wrap_content"

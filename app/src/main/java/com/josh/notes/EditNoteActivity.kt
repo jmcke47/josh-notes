@@ -88,6 +88,7 @@ class EditNoteActivity : LockableActivity() {
     private fun ensureNoteId(): Long {
         if (noteId == 0L) {
             noteId = NoteStore.upsert(this, buildNote().copy(id = 0L)).id
+            NoteStore.get(this, noteId)?.let { Stats.recordSaveXp(this, null, it) }
             createdHere = true
             NoteStore.get(this, noteId)?.let { createdAt = it.createdAt; lastEdited = it.updatedAt }
         }
@@ -762,8 +763,10 @@ class EditNoteActivity : LockableActivity() {
             // Only bump "edited" time when the content changed.
             noteId = NoteStore.upsert(this, n.copy(createdAt = existing.createdAt, updatedAt = existing.updatedAt,
                 deletedAt = existing.deletedAt), touch = !contentSame).id
+            if (!contentSame) Stats.recordSaveXp(this, existing, n)
         } else {
             noteId = NoteStore.upsert(this, n.copy(id = 0L)).id
+            Stats.recordSaveXp(this, null, n)
         }
         NoteStore.get(this, noteId)?.let { createdAt = it.createdAt; lastEdited = it.updatedAt }
         updateFooter()

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Minimap-style orb with a microphone orb badge (starts dictation). Original art. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/os_minimap_plain" />
+    <item android:gravity="bottom|left" android:width="32dp" android:height="32dp" android:drawable="@drawable/os_orb" />
+    <item android:gravity="bottom|left" android:left="6dp" android:bottom="6dp" android:width="20dp" android:height="20dp">
+        <bitmap android:src="@drawable/os_ic_mic" android:filter="false" android:gravity="fill" /></item>
+</layer-list>

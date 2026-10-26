@@ -1,9 +1,15 @@
-# Old School theme kit (`oldschool-theme`) — v1.0.0
+# Old School theme kit (`oldschool-theme`) — v1.1.0
 
 A self-contained Android library module with the "Old School" look used by **Josh Notes** and **Josh Learn**:
 stone interface panels with bevels, parchment scrolls, yellow pixel text with a hard black shadow, cyan secondary
 text, orange links. **All artwork is original** (procedural/hand-made by `tools/gen_art.py`); no game assets,
-logos, sprites or fonts from any commercial game, and the font is Pixelify Sans (SIL OFL 1.1).
+logos, sprites or fonts from any commercial game. Body text uses **OS Small**, a self-drawn pixel font made for this
+kit (`tools/gen_font.py`, SIL OFL 1.1); Pixelify Sans (OFL) is still shipped for apps that referenced it.
+
+**v1.1 = the 2007-era redesign**: carved dark wood/stone frames with rivets, parchment chatbox lists with a bottom tab
+row, a side-panel strip of square stone tabs, yellow `#FFFF00` headers, "Choose Option" menus, "Click here to
+continue" / "Select an Option" chatbox dialogs, a 3-column skills grid, right-side XP drops and a minimap orb.
+See section 3b and *Upgrading from 1.0.0*.
 
 * Package / namespace: `com.josh.oldschool` (Kotlin classes `Os*`)
 * Every resource is prefixed **`os_`** (drawables, colours, dimens, layouts, ids, attrs, font, asset); styles live
@@ -52,6 +58,19 @@ commit. Josh Notes does this automatically at the start of `release.sh`.
 resources of the same name, so stale copies would make the two apps drift apart. The font is now
 `@font/os_pixelify_sans`.
 
+### Upgrading from 1.0.0 (what changed)
+1. Re-sync (`sync-into.sh`), rebuild. No API was removed; everything from 1.0 still compiles.
+2. **Font**: the theme font is now `@font/os_font` (family: `os_font_small.ttf` regular 400 + `os_font_small_bold.ttf`
+   bold 700). In code use `Os.font(ctx)` / `Os.font(ctx, bold = true)` instead of loading `R.font.os_pixelify_sans`.
+   Add `assets/licenses/os_font-OFL.txt` to your licences screen (keep the Pixelify one too).
+3. **Look changes you get for free**: toolbar is dark wood with rivets and a bold yellow title; panel tile is darker
+   brown-black; `os_widget_bg` / `os_chatbox_carved` use the carved riveted frame; stone buttons (`os_button_*`) are
+   textured and invert their bevel when pressed; `OsSkillTile` is the recessed classic tile (level/level), dialog
+   titles are yellow, dialog body orange, dialog buttons stone.
+4. **Opt-in pieces** (section 3b): `Os.applyScreenFrame(root)`, `OsDialogs.alert(ctx)` (chatbox dialogs),
+   `OsDialogs.chat/options`, side tabs, chat tabs, `OsXpDrops.rightSide`, `OsSkillTile.setTotal`, `os_minimap_mic`.
+5. `OsDialogs.contextMenu` now ends with a **Cancel** row by default (`cancel = false` to hide; it never calls `onPick`).
+
 ## 2. Theme
 
 ```xml
@@ -98,11 +117,36 @@ for black ink text, no shadow.
 | Bars | `style="@style/Widget.OldSchool.ProgressBar"` (green on red) / `.Xp` (gold) — `os_progress_hp`, `os_progress_xp` |
 | Widget frame pieces (RemoteViews-safe) | backgrounds `os_widget_bg os_widget_row os_chatbox os_chat_row os_frame_filled os_banner`; layouts `os_rv_frame` (header bitmap + 2 buttons + ListView `os_rv_list`/`os_rv_empty`), `os_rv_check_row`, `os_rv_inventory_slot`, `os_rv_skill_tile`, `os_rv_progress(_xp)`, `os_rv_banner`, `os_rv_answer`; helper `OsRemote.pixelText/slot/skill/progress/answerBackground`, `OsPixelText.render/fitSize` |
 
+## 3b. New in 1.1 (2007-era redesign)
+
+| Piece | Resources / classes |
+|---|---|
+| Colours | `os_header` (#FFFF00), `os_highlight_orange/cyan/white`, `os_wood os_wood_light os_wood_dark`, `os_dialog_red os_dialog_blue`, `os_quest_red/yellow/green`; `color/os_chat_tab_text` |
+| Headers | `TextAppearance.OldSchool.Header` — bold yellow #FFFF00 with a 1px black shadow (toolbar titles use it automatically) |
+| Font | `@font/os_font` (OS Small regular/bold, self-drawn, OFL: `assets/licenses/os_font-OFL.txt`); `Os.font(ctx, bold)` |
+| Carved frames | 9-patch `os_frame_carved` (dark wood band, bevelled light/dark edges, rivets in the corners; border only), `os_frame_carved_filled`, `os_frame_thin`, `os_rivet`, texture `os_wood_tile`; `os_screen_frame` |
+| Screen frame | `Os.applyScreenFrame(rootView)` — draws the carved frame as a foreground that follows the root's padding (system-bar insets); call after insets are applied |
+| Chatbox list | `os_chatbox_carved` (parchment inside a carved frame) for lists; bottom tab row: style `Widget.OldSchool.ChatTab` (`os_chat_tab` selector: `os_chat_tab_up/down`, white text when selected, orange otherwise; use `isSelected`) |
+| Side tabs | style `Widget.OldSchool.SideTab` on an `ImageButton` (`os_side_tab`: square stone, red when selected, darker when pressed) inside `os_side_panel`; size `@dimen/os_side_tab_size` |
+| Icons (new) | `os_ic_stats os_ic_quest os_ic_tag os_ic_mic os_ic_plus os_ic_memo` |
+| Orbs | `os_minimap_mic` (minimap + mic badge, for dictation, `@dimen/os_minimap_size`), `os_minimap_plain`, `os_orb_new` (orb + plus) |
+| Choose Option menu | `OsDialogs.contextMenu(ctx, options, target, header = "Choose Option", cancel = true) { i -> }` — white option + orange target, Cancel row |
+| Chat dialogs | `OsDialogs.chat(ctx, title, message, continueText = "Click here to continue") { }` (bottom chatbox, tap anywhere); `OsDialogs.options(ctx, message, listOf("Yes","No")) { i -> }` ("Select an Option" in red); long messages scroll |
+| Drop-in builder | `OsDialogs.alert(ctx)` = `OsAlertBuilder`, a `MaterialAlertDialogBuilder`: title/message + 1 button → chat dialog; 2–3 buttons → options (positive, neutral, negative order); custom views/lists → stone panel dialog. Listeners get the real dialog + `BUTTON_*`. Don't call `getButton()` on chat-style results (there are none) |
+| Skills grid | `OsSkillTile.set(icon, level, label = null, baseLevel = level)`, `setTotal(total, "Total level:")`; put 3 per row in a GridLayout on `os_widget_bg` |
+| XP drops | `OsXpDrops.rightSide(activity, listOf(R.drawable.os_ic_quill to 40, R.drawable.os_ic_book to 120))` — staggered drops rising up the right edge |
+| Stone buttons | `os_button_normal/_pressed` textured; style `Widget.OldSchool.Button.Dialog` for dialog buttons |
+| Pixel text → bitmap | `OsPixelText.render(ctx, text, sizeSp, color, maxWidthPx, maxLines = 1, shadow = true, strike = false, bold = false)` returns a `Bitmap`; `OsPixelText.fitSize(..., bold)` shrinks to fit. `OsRemote.pixelText(ctx, views, imageViewId, text, sizeSp, color, maxWidthPx, ...)` sets it straight into a RemoteViews ImageView. Use for widgets, notifications, anywhere an app font can't load |
+
 ### Widgets (RemoteViews) notes
 Launchers can't load app fonts or custom views in widgets, so: pixel text = `OsRemote.pixelText(...)` (renders a
 bitmap into an ImageView), answer states = swap `os_answer_*` backgrounds with
 `setInt(id, "setBackgroundResource", OsRemote.answerBackground(result))`, checkboxes = swap `os_ic_check_on/off`.
 Emoji in `os_rv_inventory_slot` stay a TextView (system emoji font works in widgets).
+Single-frame widget recipe (as in Josh Notes 1.6): root background `os_widget_bg` (carved frame), title =
+`OsPixelText.render(..., getColor(R.color.os_header), bold = true)`, header buttons get
+`setInt(id, "setBackgroundResource", R.drawable.os_side_tab)`, list on `os_chatbox`, and a bottom row of ImageViews with
+`os_chat_tab_up/down` backgrounds + pixel-text bitmaps (white = selected, orange = not) wired to PendingIntents.
 
 ## 4. Regenerating art
 `python3 tools/gen_art.py` (Pillow) rewrites `drawable-nodpi/*.png` (deterministic; same bytes every run) and the
@@ -112,4 +156,6 @@ Bump `VERSION` + `CHANGELOG.md` for any visible change, then re-sync both apps.
 ## 5. Rules for contributors
 Keep everything `os_`-prefixed and package-agnostic, original art only (no game assets, names or logos), and no
 app-specific strings. Tests/showcase for the kit live in Josh Notes (`OldSchoolKitTest`, renders
-`screens/22-kit-components.png` and `screens/23-kit-widget-pieces.png`).
+`screens/22-kit-components.png` and `screens/23-kit-widget-pieces.png`) and `OldSchool11Test`
+(`screens/25-kit-v11-pieces.png`). Font: `python3 tools/gen_font.py` (needs fontTools) rebuilds both TTFs from the glyph
+table in the script.

@@ -78,6 +78,9 @@ object Stats {
         val days = activeDays(ctx)
         val (cur, best) = streaks(days)
         val done = checklistsDone(ctx)
+        val quests = notes.count { it.quest && it.isComplete }
+        val tags = notes.flatMap { it.tags }.toSet().size
+        val files = notes.filter { !it.secret }.sumOf { it.attachments.size }
         return listOf(
             Skill("notes", "Scribing", R.drawable.os_ic_book, notes.size, "notes written", notes.size * 120),
             Skill("words", "Wordsmithing", R.drawable.os_ic_inkpot, words, "words", words * 4),
@@ -85,7 +88,36 @@ object Stats {
                 "${days.size} active days · best streak $best"),
             Skill("checklists", "Tasking", R.drawable.os_ic_tick_scroll, done, "checklists completed", done * 300),
             Skill("organising", Levels.SKILL, R.drawable.os_ic_quill, Levels.xp(ctx), "XP from ticks & reminders", Levels.xp(ctx)),
+            Skill("quests", "Questing", R.drawable.os_ic_quest, quests, "quests complete", quests * 1_500,
+                "${notes.count { it.quest }} quests started"),
+            Skill("tags", "Tagging", R.drawable.os_ic_tag, tags, "different #tags", tags * 400),
+            Skill("files", "Recording", R.drawable.os_ic_memo, files, "voice memos & attachments", files * 250),
         )
+    }
+
+    private val ICONS = mapOf("notes" to R.drawable.os_ic_book, "words" to R.drawable.os_ic_inkpot)
+
+    /** XP drops to show after a save (Old School): new note = Scribing XP, new words = Wordsmithing XP. */
+    fun recordSaveXp(ctx: Context, before: Note?, after: Note) {
+        if (after.secret) return
+        val drops = mutableListOf<String>()
+        if (before == null) drops += "notes:120"
+        val dw = words(after) - (before?.let { words(it) } ?: 0)
+        if (dw > 0) drops += "words:${dw * 4}"
+        if (drops.isEmpty()) return
+        val prev = p(ctx).getString("pending_drops", "").orEmpty()
+        p(ctx).edit().putString("pending_drops", (prev.split(',').filter { it.isNotBlank() } + drops).takeLast(6).joinToString(",")).apply()
+    }
+
+    /** (icon, xp) pairs saved by [recordSaveXp] since the last call. */
+    fun consumeSaveXp(ctx: Context): List<Pair<Int, Int>> {
+        val raw = p(ctx).getString("pending_drops", "").orEmpty()
+        if (raw.isEmpty()) return emptyList()
+        p(ctx).edit().remove("pending_drops").apply()
+        return raw.split(',').mapNotNull { e ->
+            val (k, v) = e.split(':').takeIf { it.size == 2 } ?: return@mapNotNull null
+            (ICONS[k] ?: return@mapNotNull null) to (v.toIntOrNull() ?: return@mapNotNull null)
+        }
     }
 }
 

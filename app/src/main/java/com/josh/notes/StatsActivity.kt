@@ -23,7 +23,7 @@ import java.text.NumberFormat
 /** Skill-style stats: each stat is a "skill" with XP and a level on the classic experience curve. */
 class StatsActivity : LockableActivity() {
     private val os by lazy { AppSettings.oldSchool(this) }
-    private val font by lazy { if (os) runCatching { ResourcesCompat.getFont(this, R.font.os_pixelify_sans) }.getOrNull() else null }
+    private val font by lazy { if (os) com.josh.oldschool.Os.font(this) else null }
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private val nf = NumberFormat.getIntegerInstance()
 
@@ -53,6 +53,7 @@ class StatsActivity : LockableActivity() {
         val total = skills.sumOf { it.level }
         val yellow = getColor(R.color.os_yellow)
 
+        if (os) { renderOldSchool(box, skills, total); return }
         // Skill grid (icon + level), like a classic skills panel.
         val grid = GridLayout(this).apply { columnCount = 3; useDefaultMargins = false }
         for (s in skills) {
@@ -117,5 +118,60 @@ class StatsActivity : LockableActivity() {
         }
         box.addView(text("Secret notes don't count towards words.", 12f, if (os) getColor(R.color.os_text_dim) else null, shadow = os)
             .apply { setPadding(dp(6), dp(10), dp(6), dp(6)) })
+    }
+
+    /** Classic 3-column skills panel (levels shown twice, total level last), tap a skill for its XP. */
+    private fun renderOldSchool(box: LinearLayout, skills: List<Stats.Skill>, total: Int) {
+        box.addView(text("Skills", 20f, getColor(R.color.os_header)).apply {
+            typeface = com.josh.oldschool.Os.font(context, bold = true); gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(6))
+        })
+        val grid = GridLayout(this).apply { columnCount = 3; useDefaultMargins = false }
+        fun cell(v: View) = grid.addView(v, GridLayout.LayoutParams(GridLayout.spec(GridLayout.UNDEFINED), GridLayout.spec(GridLayout.UNDEFINED, 1f)).apply {
+            width = 0; height = dp(58); setMargins(dp(2), dp(2), dp(2), dp(2))
+        })
+        for (s in skills) cell(com.josh.oldschool.OsSkillTile(this).apply {
+            set(s.icon, s.level)
+            setOnClickListener { skillInfo(s) }
+        })
+        // pad the last row so "Total level" sits in the bottom-right cell
+        repeat((3 - (skills.size + 1) % 3) % 3) { cell(View(this)) }
+        cell(com.josh.oldschool.OsSkillTile(this).apply { setTotal(total) })
+        box.addView(FrameLayout(this).apply {
+            setBackgroundResource(R.drawable.os_widget_bg); setPadding(dp(10), dp(10), dp(10), dp(10)); addView(grid)
+        })
+        val qp = NoteStore.all(this).count { !it.inTrash && it.quest && it.isComplete }
+        box.addView(text("Quest points: $qp", 16f, getColor(R.color.os_orange)).apply { setPadding(dp(6), dp(10), dp(6), 0) })
+        // XP bars for every skill.
+        for (s in skills) {
+            val base = Levels.xpForLevel(s.level)
+            val pct = if (s.nextXp > base) ((s.xp - base) * 100L / (s.nextXp - base)).toInt() else 100
+            box.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; setBackgroundResource(R.drawable.os_panel); setPadding(dp(12), dp(8), dp(12), dp(10))
+                addView(LinearLayout(context).apply {
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(ImageView(context).apply { setImageResource(s.icon) }, LinearLayout.LayoutParams(dp(22), dp(22)))
+                    addView(text(s.name, 16f, getColor(R.color.os_header)).apply {
+                        typeface = com.josh.oldschool.Os.font(context, bold = true); setPadding(dp(8), 0, 0, 0)
+                    }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                    addView(text("${nf.format(s.amount)} ${s.unit}", 13f, getColor(R.color.os_orange)))
+                })
+                addView(android.widget.ProgressBar(context, null, 0, com.josh.oldschool.R.style.Widget_OldSchool_ProgressBar_Xp).apply {
+                    max = 100; progress = pct
+                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(12)).apply { topMargin = dp(6) })
+                addView(text("XP: ${nf.format(s.xp)}" + if (s.level < Levels.MAX_LEVEL) "   Next level at: ${nf.format(s.nextXp)}" else "",
+                    12f, Color.WHITE).apply { setPadding(0, dp(4), 0, 0) })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) })
+        }
+        box.addView(text("Secret notes don't count towards words.", 12f, getColor(R.color.os_text_dim)).apply { setPadding(dp(6), dp(10), dp(6), dp(6)) })
+    }
+
+    private fun skillInfo(s: Stats.Skill) {
+        val msg = buildString {
+            append("${s.name} XP: ${nf.format(s.xp)}")
+            if (s.level < Levels.MAX_LEVEL) append("\nNext level at: ${nf.format(s.nextXp)}\nRemaining XP: ${nf.format(s.nextXp - s.xp)}")
+            append("\n${nf.format(s.amount)} ${s.unit}")
+            if (s.note.isNotEmpty()) append(" · ${s.note}")
+        }
+        com.josh.oldschool.OsDialogs.chat(this, "${s.name}: level ${s.level}", msg, icon = s.icon).show()
     }
 }

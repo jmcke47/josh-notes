@@ -101,6 +101,9 @@ class NotesWidgetProvider : AppWidgetProvider() {
             views.setViewPadding(android.R.id.background, pad, pad, pad, pad)
             views.setImageViewResource(R.id.widget_mic, theme.mic)
             views.setImageViewResource(R.id.widget_add, theme.add)
+            // Old School: square stone buttons (pressed state via the selector); plain icons otherwise.
+            for (b in intArrayOf(R.id.widget_mic, R.id.widget_add))
+                views.setInt(b, "setBackgroundResource", if (os) R.drawable.os_side_tab else 0)
             views.setInt(R.id.widget_list_frame, "setBackgroundResource", panel)
             val lp = if (os) px(context, 4) else 0
             views.setViewPadding(R.id.widget_list_frame, lp, lp, lp, lp)
@@ -111,8 +114,8 @@ class NotesWidgetProvider : AppWidgetProvider() {
                 val maxW = px(context, (WidgetTheme.widthDp(context, widgetId) - buttonsDp).coerceIn(60, 420))
                 titleBitmap = if (pixelTitle) runCatching {
                     // Shrink long labels (e.g. "Garden quest 2/6") a little before ellipsizing.
-                    val sp = PixelText.fitSize(context, label, titleSp, titleSp * 0.7f, maxW)
-                    PixelText.render(context, label, sp, context.getColor(R.color.os_orange), maxW)
+                    val sp = PixelText.fitSize(context, label, titleSp, titleSp * 0.7f, maxW, bold = true)
+                    PixelText.render(context, label, sp, context.getColor(R.color.os_header), maxW, bold = true)
                 }.getOrNull() else null
                 if (titleBitmap == null) title = R.id.widget_title_dark // fallback: plain orange text on stone
             }
@@ -132,6 +135,31 @@ class NotesWidgetProvider : AppWidgetProvider() {
                 PendingIntent.getActivity(context, 5,
                     Intent(context, EditNoteActivity::class.java).setAction(EditNoteActivity.ACTION_DICTATE)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), immutable))
+        }
+
+        private val TAB_MODES = listOf(R.id.widget_tab_all to WidgetOptions.Mode.ALL, R.id.widget_tab_pinned to WidgetOptions.Mode.PINNED,
+            R.id.widget_tab_lists to WidgetOptions.Mode.CHECKLISTS)
+
+        /** Old School chat tabs under the list (All / Pinned / Lists); tapping one switches this widget's filter. */
+        internal fun styleTabs(context: Context, views: RemoteViews, theme: WidgetTheme, widgetId: Int, opts: WidgetOptions, pixel: Boolean) {
+            val show = theme == WidgetTheme.OLDSCHOOL && opts.tabbed && pixel
+            views.setViewVisibility(R.id.widget_tabs, if (show) View.VISIBLE else View.GONE)
+            if (!show) return
+            val labels = mapOf(WidgetOptions.Mode.ALL to "All", WidgetOptions.Mode.PINNED to "Pinned", WidgetOptions.Mode.CHECKLISTS to "Lists")
+            val w = px(context, ((WidgetTheme.widthDp(context, widgetId) - 24) / 3).coerceIn(40, 200))
+            for ((id, m) in TAB_MODES) {
+                val on = opts.mode == m
+                views.setInt(id, "setBackgroundResource", if (on) R.drawable.os_chat_tab_down else R.drawable.os_chat_tab_up)
+                runCatching { PixelText.render(context, labels.getValue(m), 12f, context.getColor(if (on) R.color.os_white else R.color.os_orange), w, bold = true) }
+                    .getOrNull()?.let { views.setImageViewBitmap(id, it) }
+                val i = Intent(context, WidgetActionActivity::class.java)
+                    .putExtra(WidgetActionActivity.EXTRA_ACTION, WidgetActionActivity.ACTION_MODE)
+                    .putExtra(WidgetActionActivity.EXTRA_MODE, m.name)
+                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+                    .setData(Uri.parse("joshnotes://widget/$widgetId/tab/${m.name}"))
+                views.setOnClickPendingIntent(id, PendingIntent.getActivity(context, 100 + widgetId * 16 + m.ordinal, i,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+            }
         }
 
         /** Mutable template for collection items: routed through [WidgetActionActivity] (open note / tick item). */
@@ -163,6 +191,7 @@ class NotesWidgetProvider : AppWidgetProvider() {
                 WidgetOptions.Mode.ALL -> context.getString(R.string.empty_notes)
                 WidgetOptions.Mode.PINNED -> "No pinned notes"
                 WidgetOptions.Mode.TAG -> "No notes tagged #${opts.tag}"
+                WidgetOptions.Mode.CHECKLISTS -> "No checklists yet"
                 WidgetOptions.Mode.CHECKLIST -> when {
                     checklist == null -> "Checklist not found — long-press the widget to choose another"
                     checklist.secret -> "This checklist is secret — tap to open it"
@@ -182,6 +211,7 @@ class NotesWidgetProvider : AppWidgetProvider() {
                 views.setRemoteAdapter(R.id.widget_list, serviceIntent)
             }
             views.setEmptyView(R.id.widget_list, R.id.widget_empty)
+            styleTabs(context, views, theme, widgetId, opts, pixelTitle)
             views.setPendingIntentTemplate(R.id.widget_list, itemTemplate(context))
 
             val immutable = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

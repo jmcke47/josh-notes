@@ -78,7 +78,7 @@ class NotesWidgetService : RemoteViewsService() {
                 val icons = (if (n.pinned) 16 else 0) + (if (n.attachments.isNotEmpty()) 16 else 0) +
                     (if (n.hasReminder && !overdue) 16 else 0) + (if (overdue) 32 else 0)
                 val rowW = ((WidgetTheme.widthDp(context, widgetId) - 44) * dm.density).toInt()
-                PixelText.render(context, "$title:", 14f, context.getColor(R.color.os_ink), rowW - (icons * dm.density).toInt(), shadow = false)
+                PixelText.render(context, "$title:", 14f, context.getColor(R.color.os_ink), rowW - (icons * dm.density).toInt(), shadow = false, bold = true)
                     ?.let { rv.setImageViewBitmap(R.id.widget_item_title_img, it) }
                 val body = if (preview.isEmpty()) null
                     else PixelText.render(context, preview, 12f, context.getColor(R.color.os_chat_blue), rowW - ((if (overdue) 32 else 0) * dm.density).toInt(),

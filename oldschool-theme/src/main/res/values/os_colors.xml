@@ -33,4 +33,17 @@
     <color name="os_timer_ok">#30D030</color>
     <color name="os_timer_warn">#FFD000</color>
     <color name="os_timer_low">#FF3020</color>
+    <!-- v1.1: 2007-style highlights and frames -->
+    <color name="os_header">#FFFF00</color>
+    <color name="os_highlight_orange">#FF981F</color>
+    <color name="os_highlight_cyan">#00FFFF</color>
+    <color name="os_highlight_white">#FFFFFF</color>
+    <color name="os_wood">#2B2117</color>
+    <color name="os_wood_light">#7A6446</color>
+    <color name="os_wood_dark">#100B07</color>
+    <color name="os_dialog_red">#800000</color>
+    <color name="os_dialog_blue">#0000FF</color>
+    <color name="os_quest_red">#FF0000</color>
+    <color name="os_quest_yellow">#FFFF00</color>
+    <color name="os_quest_green">#00FF00</color>
 </resources>
