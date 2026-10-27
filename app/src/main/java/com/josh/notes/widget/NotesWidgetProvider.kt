@@ -200,7 +200,11 @@ class NotesWidgetProvider : AppWidgetProvider() {
                 }
             })
 
-            if (withList) {
+            if (withList && android.os.Build.VERSION.SDK_INT >= 31) {
+                // Rows travel inside this RemoteViews (see NotesWidgetService.collection); a full updateAppWidget
+                // (refreshAll/updateWidget, e.g. after a tab tap) always replaces the whole list.
+                views.setRemoteAdapter(R.id.widget_list, NotesWidgetService.collection(context, widgetId, pixelTitle))
+            } else if (withList) {
                 val serviceIntent = Intent(context, NotesWidgetService::class.java).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
                     // Theme + options in the data URI so the launcher re-binds a fresh factory/view cache when they change.

@@ -26,6 +26,18 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal">
+            <!-- Plain-text fallback (used when pixel bitmaps are off or over the widget's bitmap budget). -->
+            <TextView
+                android:id="@+id/widget_item_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="#FF000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
             <ImageView
                 android:id="@+id/widget_item_title_img"
                 android:layout_width="0dp"
@@ -40,6 +52,16 @@
             <ImageView android:id="@+id/widget_item_pin" android:layout_width="13dp" android:layout_height="13dp" android:layout_marginStart="3dp"
                 android:importantForAccessibility="no" android:src="@drawable/os_ic_widget_pin" />
         </LinearLayout>
+        <TextView
+            android:id="@+id/widget_item_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textColor="#FF0000FF"
+            android:textSize="12sp"
+            android:visibility="gone" />
         <ImageView
             android:id="@+id/widget_item_body_img"
             android:layout_width="match_parent"

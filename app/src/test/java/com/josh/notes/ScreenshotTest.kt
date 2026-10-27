@@ -231,13 +231,18 @@ class ScreenshotTest {
             rv.reapply(c, old); old
         } else {
             prefs.edit().putString("theme", theme).commit()
-            com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, widgetId, withList = false).apply(c, frame)
+            // The real update (rows as RemoteCollectionItems), parcelled like the trip to the launcher.
+            val rv = com.josh.notes.widget.NotesWidgetProvider.buildViews(ctx, widgetId)
+            val p = android.os.Parcel.obtain(); rv.writeToParcel(p, 0); p.setDataPosition(0)
+            val sent = android.widget.RemoteViews.CREATOR.createFromParcel(p); p.recycle()
+            val hv = android.appwidget.AppWidgetHostView(c)
+            sent.apply(c, hv).also { hv.addView(it) }.also { hv.removeView(it) }
         }
         frame.addView(root, android.widget.FrameLayout.LayoutParams(w, h))
         val list = root.findViewById<android.widget.ListView>(R.id.widget_list)
         val f = com.josh.notes.widget.NotesWidgetService.Factory(ctx, widgetId).apply { onDataSetChanged() }
-        root.findViewById<View>(R.id.widget_empty).visibility = View.GONE
-        list.adapter = object : android.widget.BaseAdapter() {
+        if (f.count > 0) root.findViewById<View>(R.id.widget_empty).visibility = View.GONE
+        if (list.adapter == null) list.adapter = object : android.widget.BaseAdapter() {
             override fun getCount() = f.count
             override fun getItem(p: Int) = p
             override fun getItemId(p: Int) = p.toLong()
@@ -255,6 +260,7 @@ class ScreenshotTest {
         renderWidget("LIGHT", "12-widget-light")
         renderWidget("OLDSCHOOL", "13-widget-oldschool-after-system", from = "SYSTEM")
         renderWidget("SYSTEM", "14-widget-system")
+        renderWidget("OLDSCHOOL", "27-widget-rows-fixed")
     }
 
     @Test fun editorText() {
