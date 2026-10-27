@@ -250,4 +250,54 @@
     <style name="ThemeOverlay.OldSchool.Chip" parent=""><item name="chipStyle">@style/Widget.OldSchool.Chip</item></style>
     <style name="ThemeOverlay.OldSchool.Chip.Choice" parent=""><item name="chipStyle">@style/Widget.OldSchool.Chip.Choice</item></style>
     <style name="ThemeOverlay.OldSchool.Chip.Filter" parent=""><item name="chipStyle">@style/Widget.OldSchool.Chip.Filter</item></style>
+
+    <!-- ===================== v1.3: classic-look pass ===================== -->
+    <!-- ScrollView with the always-visible stone scrollbar (theme default via android:scrollViewStyle). -->
+    <style name="Widget.OldSchool.ScrollView" parent="android:Widget.ScrollView">
+        <item name="android:fadeScrollbars">false</item>
+        <item name="android:scrollbarStyle">insideOverlay</item>
+    </style>
+    <!-- Chatbox input line ("Name: message*"): blue text on the parchment, thin rule above, no shadow. -->
+    <style name="Widget.OldSchool.ChatInput" parent="Widget.AppCompat.EditText">
+        <item name="android:background">@drawable/os_chat_input</item>
+        <item name="android:textColor">@color/os_chat_input</item>
+        <item name="android:textColorHint">@color/os_chat_input_hint</item>
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:minHeight">36dp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:shadowRadius">0</item>
+        <item name="android:shadowColor">#00000000</item>
+    </style>
+    <!-- Stat orb (ImageView): ring + coloured well; set android:src to @drawable/os_orb_stat_green/red/cyan/yellow. -->
+    <style name="Widget.OldSchool.StatOrb" parent="">
+        <item name="android:layout_width">@dimen/os_orb_stat_size</item>
+        <item name="android:layout_height">@dimen/os_orb_stat_size</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:src">@drawable/os_orb_stat_green</item>
+    </style>
+    <!-- Shadowed text colours (1px black drop shadow; Os.crispShadows snaps it to one font pixel). -->
+    <style name="TextAppearance.OldSchool.Yellow" parent="TextAppearance.OldSchool.BodyLarge">
+        <item name="android:textColor">@color/os_yellow</item>
+        <item name="android:shadowColor">#FF000000</item><item name="android:shadowDx">3</item>
+        <item name="android:shadowDy">3</item><item name="android:shadowRadius">0.01</item>
+    </style>
+    <style name="TextAppearance.OldSchool.Orange" parent="TextAppearance.OldSchool.Yellow">
+        <item name="android:textColor">@color/os_orange</item></style>
+    <style name="TextAppearance.OldSchool.Cyan" parent="TextAppearance.OldSchool.Yellow">
+        <item name="android:textColor">@color/os_cyan</item></style>
+    <style name="TextAppearance.OldSchool.White" parent="TextAppearance.OldSchool.Yellow">
+        <item name="android:textColor">@color/os_white</item></style>
+    <style name="TextAppearance.OldSchool.MenuHeader" parent="">
+        <item name="android:fontFamily">@font/os_font</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/os_menu_header_text</item>
+    </style>
+    <style name="TextAppearance.OldSchool.MenuOption" parent="TextAppearance.OldSchool.Yellow">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textColor">@color/os_menu_option_text</item>
+    </style>
 </resources>

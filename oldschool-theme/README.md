@@ -1,4 +1,4 @@
-# Old School theme kit (`oldschool-theme`) — v1.2.0
+# Old School theme kit (`oldschool-theme`) — v1.3.0
 
 A self-contained Android library module with the "Old School" look used by **Josh Notes** and **Josh Learn**:
 stone interface panels with bevels, parchment scrolls, yellow pixel text with a hard black shadow, cyan secondary
@@ -57,6 +57,15 @@ commit. Josh Notes does this automatically at the start of `release.sh`.
 `drawable/os_*.xml`, `drawable-nodpi/os_*.png`, `font/pixelify_sans.ttf`). App resources silently override library
 resources of the same name, so stale copies would make the two apps drift apart. The font is now
 `@font/os_pixelify_sans`.
+
+### Upgrading from 1.2.0 to 1.3.0
+Re-sync and rebuild; no code changes are required (no API or resource was removed or renamed). 1.3 is a visual pass
+under the same names plus a few additions (section 3d). Things you may notice: panels/buttons are the classic
+`#3E3529` brown, the "Choose Option" menu is flat `#5D5447` with white options that turn yellow when pressed, stone
+buttons have pressed/focused/disabled looks and an `os_button_text` colour state list, `ScrollView`s get an
+always-visible stone scrollbar (theme `android:scrollViewStyle`), and `Os.applyScreenFrame(root)` now also snaps
+shadowed text to a one-font-pixel black shadow (`Os.crispShadows`). If a screen must keep a fading scrollbar, give
+that ScrollView `android:fadeScrollbars="true"`.
 
 ### Upgrading from 1.1.0 to 1.2.0
 Re-sync and rebuild; nothing to change. 1.2 only **adds** APIs (section 3c). Two small fixes you get for free:
@@ -176,14 +185,41 @@ Single-frame widget recipe (as in Josh Notes 1.6): root background `os_widget_bg
 `setInt(id, "setBackgroundResource", R.drawable.os_side_tab)`, list on `os_chatbox`, and a bottom row of ImageViews with
 `os_chat_tab_up/down` backgrounds + pixel-text bitmaps (white = selected, orange = not) wired to PendingIntents.
 
+## 3d. New in 1.3 (closer to the classic look)
+All original art; same file names as before where a piece was redrawn.
+- **Palette**: panel tile is now `#3E3529`-based; new colours `os_bevel_light/dark`, `os_text_shadow`,
+  `os_menu_option(_hover)`, `os_chat_input(_hint)`, `os_chat_cyan/white`, `os_button_disabled_text`,
+  `os_orb_green/red/cyan/yellow`. `os_menu_bg` is now opaque `#5D5447`.
+- **Bevels & rivets**: `os_frame_carved(_filled)`, `os_frame_thin`, `os_frame(_filled)` redrawn: 1px light/dark
+  bevel, engraved groove, recessed inner lip, domed 5x5 studs (`os_rivet`). Side panel strip is brown stone.
+- **Text shadow & font**: `Os.fontPixel(textSizePx)`, `Os.crispShadow(tv)`, `Os.crispShadows(root, keep)` — hard
+  black shadow offset by exactly one font pixel; `OsPixelText`/`OsRemote` bitmaps use the same offset.
+  `TextAppearance.OldSchool.Yellow/Orange/Cyan/White/MenuHeader/MenuOption`. OS Small 1.3: hand-made bold
+  N/M/W/V/X/Y/Z/K/m/w/v/x (bold N no longer reads as M) and accented é è à á ä ö ü ñ ç.
+- **Tabs & icons**: chamfered side tabs (selected = deep red with glowing rim), 2-step chamfered filter tabs and
+  chat tabs (selected = gold underline); re-shaded `os_ic_stats/scroll/quest/wrench`; new `os_ic_pack`,
+  `os_ic_star`, `os_ic_bell`, `os_ic_gear`.
+- **Chatbox**: lighter parchment `os_chat_tile`, thinner inner rule; `Widget.OldSchool.ChatInput` (blue text,
+  `@drawable/os_chat_input` rule above).
+- **Orbs**: `os_orb` ring lit from the top-left; stat orbs `@drawable/os_orb_stat_green/red/cyan/yellow`
+  (`Widget.OldSchool.StatOrb`, `@dimen/os_orb_stat_size`; put the number to the left, like the classic orbs).
+- **Right-click menu**: `OsDialogs.contextMenu(View)` = flat `#5D5447` panel, black outline, black "Choose Option"
+  header in `#5D5447`, white options that turn yellow while pressed (`@color/os_menu_option_text`);
+  `@drawable/os_menu_panel` 9-patch for your own menus.
+- **Buttons**: `os_button` / `os_button_9` gain focused (gold inner line) and disabled (grey stone) states
+  (`os_button_focused(_bg)`, `os_button_disabled`); `Widget.OldSchool.Button` text uses `@color/os_button_text`.
+- **Scrollbar**: `os_scrollbar_thumb` (bevelled stone with grip) on `os_scrollbar_track`, set in `Theme.OldSchool`
+  (`@dimen/os_scrollbar_size` 8dp) + `Widget.OldSchool.ScrollView` (never fades).
+
 ## 4. Regenerating art
 `python3 tools/gen_art.py` (Pillow) rewrites `drawable-nodpi/*.png` (deterministic; same bytes every run) and the
-9-patches/orb/thumb in `drawable-xxhdpi/` (`tools/gen_kit_parts.py`; 1 art pixel = 1dp, 9-patch guides added).
+9-patches/orb/thumb in `drawable-xxhdpi/` (`tools/gen_kit_parts.py`, then the v1.3 overrides/additions in
+`tools/gen_v13.py`, which can also be run alone; 1 art pixel = 1dp, 9-patch guides added).
 Bump `VERSION` + `CHANGELOG.md` for any visible change, then re-sync both apps.
 
 ## 5. Rules for contributors
 Keep everything `os_`-prefixed and package-agnostic, original art only (no game assets, names or logos), and no
 app-specific strings. Tests/showcase for the kit live in Josh Notes (`OldSchoolKitTest`, renders
 `screens/22-kit-components.png` and `screens/23-kit-widget-pieces.png`) and `OldSchool11Test`
-(`screens/25-kit-v11-pieces.png`) and `OldSchoolKit12Test` (`screens/26-kit-v12-pieces.png`). Font: `python3 tools/gen_font.py` (needs fontTools) rebuilds both TTFs from the glyph
+(`screens/25-kit-v11-pieces.png`) and `OldSchoolKit12Test` (`screens/26-kit-v12-pieces.png`) and `OldSchoolKit13Test` (`screens/28-kit-v13-pieces.png`). Font: `python3 tools/gen_font.py` (needs fontTools) rebuilds both TTFs from the glyph
 table in the script.

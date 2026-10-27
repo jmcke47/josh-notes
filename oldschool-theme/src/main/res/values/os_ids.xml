@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- v1.3: marks a root already hooked by Os.crispShadows(keep = true). -->
+    <item name="os_crisp_shadows" type="id" />
+</resources>

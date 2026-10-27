@@ -58,6 +58,27 @@ G = {
  '\u201c': "#.#|#.#", '\u201d': "#.#|#.#", '\u2022': "3:##|##", '\u00b0': ".#.|#.#|.#.",
  '\u00a3': ".##.|#..#|#...|###.|#...|#...|####", '\u00d7': "2:#.#|.#.|#.#", '\u2192': "2:..#.|####|..#.",
 }
+# v1.3: a few accented letters (original pixel designs).
+G.update({
+ '\u00e9': "..#.|.#..|.##.|#..#|####|#...|.###", '\u00e8': ".#..|..#.|.##.|#..#|####|#...|.###",
+ '\u00e0': ".#..|..#.|.###|#..#|#..#|#..#|.###", '\u00e1': "..#.|.#..|.###|#..#|#..#|#..#|.###",
+ '\u00fc': "#..#|....|#..#|#..#|#..#|#..#|.###", '\u00f6': "#..#|....|.##.|#..#|#..#|#..#|.##.",
+ '\u00e4': "#..#|....|.###|#..#|#..#|#..#|.###", '\u00f1': ".#.#|#.#.|###.|#..#|#..#|#..#|#..#",
+ '\u00e7': "2:.###|#...|#...|#...|.###|..#.|.#..",
+})
+# v1.3: hand-made bold forms for letters whose diagonals clog when simply doubled (bold N read like M).
+BOLD = {
+ 'N': "##...##|###..##|##.#.##|##..###|##...##|##...##|##...##",
+ 'M': "##...##|###.###|##.#.##|##.#.##|##...##|##...##|##...##",
+ 'W': "##...##|##...##|##...##|##.#.##|##.#.##|###.###|##...##",
+ 'V': "##...##|##...##|##...##|.##.##.|.##.##.|..###..|...#...",
+ 'X': "##...##|.##.##.|..###..|...#...|..###..|.##.##.|##...##",
+ 'Y': "##...##|##...##|.##.##.|..###..|...##..|...##..|...##..",
+ 'Z': "######|....##|...##.|..##..|.##...|##....|######",
+ 'K': "##..##|##.##.|####..|###...|####..|##.##.|##..##",
+ 'm': "2:#####.|##.#.##|##.#.##|##.#.##|##.#.##", 'w': "2:##...##|##...##|##.#.##|##.#.##|.##.##.",
+ 'v': "2:##..##|##..##|.####.|.####.|..##..", 'x': "2:##..##|.####.|..##..|.####.|##..##",
+}
 
 def rows_of(spec):
     start = 0
@@ -102,7 +123,8 @@ def build(bold, out):
     glyphs['space'] = TTGlyphPen(None).glyph(); metrics['space'] = (300 + (100 if bold else 0), 0)
     for c, spec in G.items():
         name = 'u%04X' % ord(c); grid, w = rows_of(spec)
-        if bold: grid, w = embolden(grid, w)
+        if bold and c in BOLD: grid, w = rows_of(BOLD[c])
+        elif bold: grid, w = embolden(grid, w)
         glyphs[name] = glyph(grid, w); cmap[ord(c)] = name
         xs = [x for y in range(ROWS) for x in range(w) if grid[y][x]]
         metrics[name] = ((w + 1) * PX, (min(xs) if xs else 0) * PX + PX // 2)
@@ -112,8 +134,8 @@ def build(bold, out):
     fb.setupHorizontalMetrics(metrics)
     fb.setupHorizontalHeader(ascent=900, descent=-300)
     fb.setupNameTable({'familyName': 'OS Small', 'styleName': style,
-                       'uniqueFontIdentifier': 'OSSmall-' + style + '-1.1', 'fullName': 'OS Small ' + style,
-                       'psName': 'OSSmall-' + style, 'version': 'Version 1.100',
+                       'uniqueFontIdentifier': 'OSSmall-' + style + '-1.3', 'fullName': 'OS Small ' + style,
+                       'psName': 'OSSmall-' + style, 'version': 'Version 1.300',
                        'copyright': 'Copyright 2026 Josh (Josh Notes / Josh Learn). Original pixel design.',
                        'licenseDescription': 'This Font Software is licensed under the SIL Open Font License, Version 1.1.',
                        'licenseInfoURL': 'https://openfontlicense.org'})

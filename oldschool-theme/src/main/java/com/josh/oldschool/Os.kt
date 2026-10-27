@@ -34,6 +34,7 @@ object Os {
             root.foreground = android.graphics.drawable.InsetDrawable(frame, root.paddingLeft, root.paddingTop, root.paddingRight, root.paddingBottom)
         }
         apply()
+        crispShadows(root, keep = true)
         var last = listOf(root.paddingLeft, root.paddingTop, root.paddingRight, root.paddingBottom)
         root.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
             val now = listOf(v.paddingLeft, v.paddingTop, v.paddingRight, v.paddingBottom)
@@ -43,6 +44,36 @@ object Os {
 
     fun dp(ctx: Context, v: Float): Float = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, ctx.resources.displayMetrics)
     fun dpi(ctx: Context, v: Float): Int = dp(ctx, v).toInt()
+
+    /**
+     * Size in px of one pixel of the OS Small font at [textSizePx] (11 font pixels per em), snapped to whole device
+     * pixels. v1.3: the classic "1px" black drop shadow is exactly this far right and down.
+     */
+    @JvmStatic fun fontPixel(textSizePx: Float): Float = Math.round(textSizePx / 11f).coerceAtLeast(1).toFloat()
+
+    /** v1.3: give [tv] the classic hard shadow: black, no blur, offset by exactly one font pixel. */
+    @JvmStatic fun crispShadow(tv: android.widget.TextView) {
+        val d = fontPixel(tv.textSize)
+        if (tv.shadowDx != d || tv.shadowDy != d || tv.shadowRadius > 0.02f || tv.shadowColor != 0xFF000000.toInt())
+            tv.setShadowLayer(0.01f, d, d, 0xFF000000.toInt())
+    }
+
+    /**
+     * v1.3: walk [root] and snap every TextView that already has an opaque black shadow (i.e. the theme's shadowed
+     * text; parchment/ink text without a shadow is left alone) to [crispShadow]. With [keep] = true it also re-runs
+     * after every layout, so rows added later (lists, dialogs) are snapped too. [applyScreenFrame] calls this.
+     */
+    @JvmStatic @JvmOverloads fun crispShadows(root: android.view.View, keep: Boolean = false) {
+        fun walk(v: android.view.View) {
+            if (v is android.widget.TextView && v.shadowColor == 0xFF000000.toInt() && v.shadowDx > 0f) crispShadow(v)
+            if (v is android.view.ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i))
+        }
+        walk(root)
+        if (keep && root.getTag(R.id.os_crisp_shadows) == null) {
+            root.setTag(R.id.os_crisp_shadows, true)
+            root.viewTreeObserver.addOnGlobalLayoutListener { walk(root) }
+        }
+    }
 
     /** The theme's hard black drop shadow (no blur) for a TextView. */
     fun shadow(tv: android.widget.TextView, dxDp: Float = 1.5f) {

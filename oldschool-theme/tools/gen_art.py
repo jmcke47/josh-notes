@@ -324,4 +324,6 @@ for name, rows in ICONS.items():
             if col: px[x, y] = col + (255,)
     img.resize((48, 48), Image.NEAREST).save(OUT+name+'.png', optimize=True)
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gen_kit_parts.py')).read())
+# v1.3.0 classic-look pass: overrides some pieces above (same names) and adds new ones.
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gen_v13.py')).read(), {'__file__': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gen_v13.py')})
 print('ok')

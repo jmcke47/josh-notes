@@ -2,8 +2,8 @@
 <!-- Pressed stone button: bevel inverted, face darkened. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item><shape><solid android:color="#FF000000" /></shape></item>
-    <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp"><shape><solid android:color="#FF8A7656" /></shape></item>
-    <item android:left="1dp" android:top="1dp" android:right="3dp" android:bottom="3dp"><shape><solid android:color="#FF120D08" /></shape></item>
+    <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp"><shape><solid android:color="#FF8C7E64" /></shape></item>
+    <item android:left="1dp" android:top="1dp" android:right="3dp" android:bottom="3dp"><shape><solid android:color="#FF1C1711" /></shape></item>
     <item android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp">
         <bitmap android:src="@drawable/os_panel_tile" android:tileMode="repeat" android:filter="false" /></item>
     <item android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp"><shape><solid android:color="#59000000" /></shape></item>

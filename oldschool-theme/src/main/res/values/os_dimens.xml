@@ -29,4 +29,6 @@
     <dimen name="os_chat_tab_height">30dp</dimen>
     <dimen name="os_frame_band">7dp</dimen>
     <dimen name="os_minimap_size">84dp</dimen>
+    <dimen name="os_scrollbar_size">8dp</dimen>
+    <dimen name="os_orb_stat_size">34dp</dimen>
 </resources>

@@ -1,5 +1,23 @@
 # Old School theme kit — changelog
 
+## 1.3.0 (2026-10-27)
+Classic-look pass: closer to the 2007-era interface. Original art only. Backwards compatible (nothing removed or
+renamed; redrawn pieces keep their names). See README 3d.
+- Palette: `#3E3529` panel tile, lighter chatbox parchment, opaque `#5D5447` menu; new colours (bevel, shadow, menu
+  option, chat input, disabled button text, orb wells).
+- Frames: carved frames redrawn with 1px bevels, engraved groove, recessed lip and domed studs; side panel = stone.
+- Text: `Os.fontPixel`, `Os.crispShadow`, `Os.crispShadows` (one-font-pixel hard black shadow; `applyScreenFrame`
+  applies it and keeps it applied); pixel-text bitmaps use the same offset; `TextAppearance.OldSchool.Yellow/Orange/
+  Cyan/White/MenuHeader/MenuOption`. Font OS Small 1.3: proper bold diagonals (N/M/W/V/X/Y/Z/K/m/w/v/x), accents.
+- Tabs/icons: chamfered side, filter and chat tabs; re-shaded stats/scroll/quest/wrench; new pack/star/bell/gear.
+- Chatbox: `Widget.OldSchool.ChatInput` + `os_chat_input`.
+- Orbs: re-lit `os_orb`; `os_orb_stat_green/red/cyan/yellow`, `Widget.OldSchool.StatOrb`, `os_orb_stat_size`.
+- Menu: flat panel, black header, white options turning yellow when pressed (`os_menu_option_text`), `os_menu_panel`.
+- Buttons: focused/disabled states (`os_button_focused(_bg)`, `os_button_disabled`), `os_button_text` colours.
+- Scrollbar: `os_scrollbar_thumb/track` in `Theme.OldSchool`, `Widget.OldSchool.ScrollView` (never fades),
+  `os_scrollbar_size`.
+- Tools: `tools/gen_v13.py` (run by `gen_art.py`). Tests: `OldSchoolKit13Test` in Josh Notes.
+
 ## 1.2.0 (2026-10-26)
 Additions requested by Josh Learn (v1.4.2 had local fallbacks for these). Backwards compatible; no visual change to
 existing pieces apart from the LinkInk shadow fix.

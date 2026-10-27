@@ -24,7 +24,7 @@
     <color name="os_ink_brown">#5A2E0C</color>
     <color name="os_parchment">#D6C49A</color>
     <color name="os_menu_header_text">#5D5447</color>
-    <color name="os_menu_bg">#E6211C15</color>
+    <color name="os_menu_bg">#FF5D5447</color>
     <color name="os_answer_correct">#1E6E1E</color>
     <color name="os_answer_wrong">#821C14</color>
     <color name="os_bar_green">#00B000</color>
@@ -46,4 +46,19 @@
     <color name="os_quest_red">#FF0000</color>
     <color name="os_quest_yellow">#FFFF00</color>
     <color name="os_quest_green">#00FF00</color>
+    <!-- v1.3: classic-look pass -->
+    <color name="os_bevel_light">#FF766A56</color>
+    <color name="os_bevel_dark">#FF1C1711</color>
+    <color name="os_text_shadow">#FF000000</color>
+    <color name="os_menu_option">#FFFFFFFF</color>
+    <color name="os_menu_option_hover">#FFFFFF00</color>
+    <color name="os_chat_input">#FF0000FF</color>
+    <color name="os_chat_input_hint">#FF6E5E40</color>
+    <color name="os_chat_cyan">#FF00FFFF</color>
+    <color name="os_chat_white">#FFFFFFFF</color>
+    <color name="os_button_disabled_text">#FF8C8170</color>
+    <color name="os_orb_green">#FF28C828</color>
+    <color name="os_orb_red">#FFD21E14</color>
+    <color name="os_orb_cyan">#FF14C8DC</color>
+    <color name="os_orb_yellow">#FFE6C81E</color>
 </resources>

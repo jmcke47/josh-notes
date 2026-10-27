@@ -43,7 +43,7 @@ object OsPixelText {
             typeface = Os.font(ctx, bold); textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp, dm); this.color = color
             isStrikeThruText = strike
         }
-        val shadowPx = if (shadow) (1.5f * dm.density).coerceAtLeast(1f) else 0f
+        val shadowPx = if (shadow) Os.fontPixel(paint.textSize) else 0f   // v1.3: exactly one font pixel
         val width = (maxWidthPx - shadowPx).toInt().coerceAtLeast(1)
         val align = if (center) Layout.Alignment.ALIGN_CENTER else Layout.Alignment.ALIGN_NORMAL
         val layout = StaticLayout.Builder.obtain(text, 0, text.length, paint, width)

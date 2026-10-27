@@ -70,6 +70,13 @@
         <item name="textAppearanceLabelLarge">@style/TextAppearance.OldSchool.LabelLarge</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.OldSchool.LabelMedium</item>
         <item name="textAppearanceLabelSmall">@style/TextAppearance.OldSchool.LabelSmall</item>
+        <!-- v1.3: bevelled stone scrollbar on a recessed track -->
+        <item name="android:scrollbarThumbVertical">@drawable/os_scrollbar_thumb</item>
+        <item name="android:scrollbarTrackVertical">@drawable/os_scrollbar_track</item>
+        <item name="android:scrollbarThumbHorizontal">@drawable/os_scrollbar_thumb</item>
+        <item name="android:scrollbarTrackHorizontal">@drawable/os_scrollbar_track</item>
+        <item name="android:scrollbarSize">@dimen/os_scrollbar_size</item>
+        <item name="android:scrollViewStyle">@style/Widget.OldSchool.ScrollView</item>
     </style>
 
     <!-- Paper areas: black ink, no shadow. -->
@@ -155,8 +162,8 @@
     <style name="Widget.OldSchool.Button" parent="Widget.Material3.Button.TextButton">
         <item name="android:background">@drawable/os_button</item>
         <item name="backgroundTint">@null</item>
-        <item name="android:textColor">@color/os_orange</item>
-        <item name="iconTint">@color/os_orange</item>
+        <item name="android:textColor">@color/os_button_text</item>
+        <item name="iconTint">@color/os_button_text</item>
         <item name="rippleColor">#00000000</item>
         <item name="android:paddingStart">16dp</item>
         <item name="android:paddingEnd">16dp</item>

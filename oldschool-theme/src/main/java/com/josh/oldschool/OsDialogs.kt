@@ -56,15 +56,19 @@ object OsDialogs {
         return LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundResource(R.drawable.os_context_menu)
-            setPadding(Os.dpi(ctx, 3f), Os.dpi(ctx, 3f), Os.dpi(ctx, 3f), Os.dpi(ctx, 6f))
+            // v1.3: classic layout - flat #5D5447 panel, black header row flush with a black outline.
+            val one = Os.dpi(ctx, 1f).coerceAtLeast(1)
+            setPadding(one, one, one, Os.dpi(ctx, 4f))
             addView(TextView(ctx).apply {
                 text = header; typeface = Os.font(ctx, bold = true); textSize = 16f; setTextColor(ctx.getColor(R.color.os_menu_header_text))
-                setBackgroundColor(Color.BLACK); setPadding(pad, pad / 2, pad, pad / 2)
+                setShadowLayer(0f, 0f, 0f, 0)
+                setBackgroundColor(Color.BLACK); setPadding(pad - one, pad / 2, pad, pad / 2)
             })
             val rows = options.mapIndexed { i, o -> i to o } + if (cancel) listOf(-1 to "Cancel") else emptyList()
             rows.forEach { (i, o) ->
                 addView(TextView(ctx).apply {
-                    typeface = Os.font(ctx, bold = true); textSize = 17f; setTextColor(Color.WHITE); Os.shadow(this, 1f)
+                    typeface = Os.font(ctx, bold = true); textSize = 17f
+                    setTextColor(ctx.getColorStateList(R.color.os_menu_option_text)); Os.crispShadow(this)
                     text = if (target == null || i < 0) o else android.text.SpannableStringBuilder(o).apply {
                         append(" ")
                         val s = length; append(target)
