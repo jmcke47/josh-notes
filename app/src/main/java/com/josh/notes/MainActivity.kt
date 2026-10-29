@@ -120,12 +120,17 @@ class MainActivity : LockableActivity() {
         })
         applyMode()
 
-        if (savedInstanceState == null) updateController.quietCheck { m ->
-            Snackbar.make(root, "Update available: v${m.versionName}", Snackbar.LENGTH_INDEFINITE)
-                .setAnchorView(anchor())
-                .setAction("Update") { updateController.startUpdate(m) }
-                .show()
-        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Launch and every return from the background (throttled to ~10 min inside autoCheck).
+        if (!isChangingConfigurations) updateController.autoCheck { m -> showUpdatePrompt(m) }
+    }
+
+    /** Non-blocking "update available" prompt with Update / Later (Old School chatbox look in that theme). */
+    internal fun showUpdatePrompt(m: UpdateController.Manifest) {
+        UpdatePrompt.show(this, m, bottomOffset = (anchor()?.height ?: 0)) { updateController.startUpdate(m) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

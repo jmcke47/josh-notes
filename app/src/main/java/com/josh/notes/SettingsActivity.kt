@@ -331,6 +331,11 @@ class SettingsActivity : LockableActivity() {
             val box = findViewById<View>(R.id.advanced_box)
             box.visibility = if (box.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }
+        findViewById<MaterialSwitch>(R.id.check_updates_on_open).apply {
+            isSaveEnabled = false
+            isChecked = AppSettings.checkUpdatesOnOpen(this@SettingsActivity)
+            setOnCheckedChangeListener { _, on -> AppSettings.setCheckUpdatesOnOpen(this@SettingsActivity, on) }
+        }
         findViewById<View>(R.id.update_url_btn).setOnClickListener { updater.editUpdateUrl() }
         findViewById<android.widget.TextView>(R.id.version_text).text =
             "Josh Notes v${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})" +

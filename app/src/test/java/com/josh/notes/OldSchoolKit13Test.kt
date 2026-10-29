@@ -42,7 +42,7 @@ class OldSchoolKit13Test {
     private val dir = System.getProperty("screens.dir").orEmpty()
     private val KR = com.josh.oldschool.R.drawable::class.java
 
-    @Test fun version() = assertEquals("1.3.0", Os.VERSION)
+    @Test fun version() = assertTrue(Os.VERSION >= "1.3.0")
 
     @Test fun shadowIsExactlyOneFontPixel() {
         val tv = TextView(ctx).apply { textSize = 16f }          // themed: black shadow from Widget.OldSchool.TextView

@@ -230,11 +230,18 @@
                 android:layout_marginTop="8dp"
                 android:text="@string/delete_model" />
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:saveEnabled="false"
+                android:id="@+id/check_updates_on_open"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Check for updates on open" />
             <TextView
                 android:id="@+id/version_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="8dp"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="?attr/colorOutline" />
             <com.google.android.material.button.MaterialButton

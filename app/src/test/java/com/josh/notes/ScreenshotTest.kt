@@ -10,6 +10,7 @@ import androidx.test.core.app.ApplicationProvider
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -278,5 +279,27 @@ class ScreenshotTest {
         while (v !== sv) { y += v.top; v = v.parent as View }
         sv.scrollTo(0, y - (60 * a.resources.displayMetrics.density).toInt())
         snap(a, "09-settings-backup-drive")
+    }
+
+    /** v1.8: the non-blocking "update available" prompt, the settings toggle and the stone scrollbar inside the frame. */
+    @Test fun updatePromptAndScrollbar() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        idle()
+        a.showUpdatePrompt(UpdateController.Manifest(99, "9.9.0", "https://example.invalid/a.apk", "Checks for updates when opened; theme scrollbar fix"))
+        idle()
+        snap(a, "29-update-prompt")
+        val s = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        idle()
+        val sv = generateSequence(s.findViewById<View>(R.id.check_updates_on_open).parent as View?) { it.parent as? View }
+            .first { it is android.widget.ScrollView } as android.widget.ScrollView
+        val t = s.findViewById<View>(R.id.check_updates_on_open)
+        var y = 0; var v: View = t
+        while (v !== sv) { y += v.top; v = v.parent as View }
+        sv.scrollTo(0, y - (200 * s.resources.displayMetrics.density).toInt())
+        snap(s, "30-settings-update-toggle")
+        val band = s.resources.getDimensionPixelSize(com.josh.oldschool.R.dimen.os_frame_band)
+        assertTrue("settings scrollbar moved inside the frame (paddingRight=${sv.paddingRight})", sv.paddingRight >= band)
+        sv.scrollTo(0, 0)
+        snap(s, "31-scrollbar-visible")
     }
 }

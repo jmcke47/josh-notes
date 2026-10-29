@@ -1,4 +1,4 @@
-# Old School theme kit (`oldschool-theme`) — v1.3.0
+# Old School theme kit (`oldschool-theme`) — v1.3.1
 
 A self-contained Android library module with the "Old School" look used by **Josh Notes** and **Josh Learn**:
 stone interface panels with bevels, parchment scrolls, yellow pixel text with a hard black shadow, cyan secondary
@@ -57,6 +57,12 @@ commit. Josh Notes does this automatically at the start of `release.sh`.
 `drawable/os_*.xml`, `drawable-nodpi/os_*.png`, `font/pixelify_sans.ttf`). App resources silently override library
 resources of the same name, so stale copies would make the two apps drift apart. The font is now
 `@font/os_pixelify_sans`.
+
+### Upgrading from 1.3.0 to 1.3.1
+Re-sync and rebuild. Scroll views under the screen frame's right border get extra right padding (the frame band, 7dp)
+so their scrollbar is visible; remove any local workaround for that. Opt out of sharpened shadows per view with
+`Os.noSharpShadow(view)` or an XML `<tag android:id="@id/os_no_sharp_shadow" android:value="true" />`; use
+`Os.keepScrollbarsInsideFrame(view)` when you draw a frame yourself. See `RESYNC-1.3.1.md`.
 
 ### Upgrading from 1.2.0 to 1.3.0
 Re-sync and rebuild; no code changes are required (no API or resource was removed or renamed). 1.3 is a visual pass

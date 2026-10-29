@@ -2,4 +2,8 @@
 <resources>
     <!-- v1.3: marks a root already hooked by Os.crispShadows(keep = true). -->
     <item name="os_crisp_shadows" type="id" />
+    <!-- v1.3.1: per-view opt-out of the sharpened shadow (Os.noSharpShadow or an XML <tag>). -->
+    <item name="os_no_sharp_shadow" type="id" />
+    <!-- v1.3.1: original right padding remembered by Os.keepScrollbarsInsideFrame. -->
+    <item name="os_scrollbar_inset" type="id" />
 </resources>

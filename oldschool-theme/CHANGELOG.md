@@ -1,5 +1,15 @@
 # Old School theme kit — changelog
 
+## 1.3.1 (2026-10-29)
+Fix + small additions (reported by Learn Dev). Backwards compatible.
+- Fix: `Os.applyScreenFrame(root)` drew its border over the right edge of full-width scroll views, hiding the
+  always-visible scrollbar from 1.3.0. It now raises the right padding of any view with a vertical scrollbar that
+  reaches under the border to the frame band (`@dimen/os_frame_band`), re-checked after every layout.
+- New `Os.keepScrollbarsInsideFrame(view, borderPx = os_frame_band, recurse = true)` for frames you draw yourself.
+- New per-view opt-out of the sharpened shadow: `Os.noSharpShadow(view[, off])` or
+  `<tag android:id="@id/os_no_sharp_shadow" android:value="true" />`; applies to the view and its children.
+- New ids `os_no_sharp_shadow`, `os_scrollbar_inset`. Tests: `OldSchoolKit131Test` in Josh Notes.
+
 ## 1.3.0 (2026-10-27)
 Classic-look pass: closer to the 2007-era interface. Original art only. Backwards compatible (nothing removed or
 renamed; redrawn pieces keep their names). See README 3d.

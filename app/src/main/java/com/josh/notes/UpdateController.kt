@@ -144,6 +144,35 @@ class UpdateController(private val activity: AppCompatActivity) {
         }
     }
 
+    /**
+     * Automatic check when the app opens or comes back from the background (Settings > "Check for updates on open").
+     * Network at most once per [AUTO_INTERVAL_MS]; silent when offline, on any error, or when up to date.
+     * Calls [onAvailable] on the main thread only when a newer version exists. Returns true if a check was started.
+     */
+    fun autoCheck(onAvailable: (Manifest) -> Unit): Boolean {
+        if (!AppSettings.checkUpdatesOnOpen(activity)) return false
+        val url = manifestUrl()
+        if (isPlaceholder(url)) return false
+        val now = clock()
+        val last = prefs.getLong("last_auto_check", 0L)
+        if (last in (now - AUTO_INTERVAL_MS + 1)..now) return false
+        if (!online()) return false          // offline: stay quiet, try again next time
+        prefs.edit { putLong("last_auto_check", now) }
+        io.execute {
+            val m = runCatching { fetcher(url) }.getOrNull() ?: return@execute   // any error: silent
+            prefs.edit { putLong("known_latest", m.versionCode) }
+            if (m.versionCode > installedVersionCode()) main.post { if (!activity.isFinishing && !activity.isDestroyed) onAvailable(m) }
+        }
+        return true
+    }
+
+    /** Test hooks (manifest fetcher and clock). */
+    internal var fetcher: (String) -> Manifest = { fetchManifest(it) }
+    internal var clock: () -> Long = { System.currentTimeMillis() }
+    internal var online: () -> Boolean = { hasNetwork() }
+
+    companion object { const val AUTO_INTERVAL_MS = 10 * 60_000L }
+
     /** Start downloading a known manifest (from the launch banner). */
     fun startUpdate(m: Manifest) { cancelled = false; download(m, StatusDialog()) }
 

@@ -57,6 +57,9 @@ object AppSettings {
     fun dynamicColor(ctx: Context) = p(ctx).getBoolean("dynamic_color", false) && theme(ctx) != ThemeMode.OLDSCHOOL
     fun oldSchool(ctx: Context) = theme(ctx) == ThemeMode.OLDSCHOOL
     /** "Level up" banner when finishing a checklist / reminder (Old School theme only). */
+    /** Check for updates automatically when the app is opened / brought back (default on). */
+    fun checkUpdatesOnOpen(ctx: Context) = p(ctx).getBoolean("check_updates_on_open", true)
+    fun setCheckUpdatesOnOpen(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("check_updates_on_open", on).apply()
     fun levelUps(ctx: Context) = p(ctx).getBoolean("level_ups", true)
     fun setLevelUps(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("level_ups", on).apply()
     fun setDynamicColor(ctx: Context, on: Boolean) { p(ctx).edit().putBoolean("dynamic_color", on).commit() }

@@ -35,6 +35,22 @@ object Os {
         }
         apply()
         crispShadows(root, keep = true)
+        // v1.3.1: scroll views that run under the frame's right border get their scrollbar moved inside it.
+        val border = root.resources.getDimensionPixelSize(R.dimen.os_frame_band)
+        fun insetScrollers() {
+            val innerRight = root.width - root.paddingRight - border
+            fun walk(v: android.view.View, xInRoot: Int) {
+                if (v.visibility == android.view.View.GONE) return
+                val right = xInRoot + v.width
+                if (v !== root && v.isVerticalScrollBarEnabled && right > innerRight)
+                    keepScrollbarsInsideFrame(v, right - innerRight, recurse = false)
+                if (v is android.view.ViewGroup) for (i in 0 until v.childCount) {
+                    val c = v.getChildAt(i); walk(c, xInRoot + c.left - v.scrollX)
+                }
+            }
+            if (root.width > 0) walk(root, 0)
+        }
+        root.viewTreeObserver.addOnGlobalLayoutListener { insetScrollers() }
         var last = listOf(root.paddingLeft, root.paddingTop, root.paddingRight, root.paddingBottom)
         root.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
             val now = listOf(v.paddingLeft, v.paddingTop, v.paddingRight, v.paddingBottom)
@@ -51,6 +67,35 @@ object Os {
      */
     @JvmStatic fun fontPixel(textSizePx: Float): Float = Math.round(textSizePx / 11f).coerceAtLeast(1).toFloat()
 
+    /**
+     * v1.3.1: keep [view]'s vertical scrollbar visible inside a screen frame: its right padding is raised to at least
+     * [borderPx] (default: the frame band, @dimen/os_frame_band) so the (inside-overlay) scrollbar is drawn left of
+     * the border. Idempotent (remembers the original padding). With [recurse], also applies to every descendant that
+     * shows a vertical scrollbar. [applyScreenFrame] does this automatically for scroll views under the border.
+     */
+    @JvmStatic @JvmOverloads fun keepScrollbarsInsideFrame(view: android.view.View, borderPx: Int =
+        view.resources.getDimensionPixelSize(R.dimen.os_frame_band), recurse: Boolean = true) {
+        if (view.isVerticalScrollBarEnabled) {
+            val orig = (view.getTag(R.id.os_scrollbar_inset) as? Int) ?: view.paddingRight.also { view.setTag(R.id.os_scrollbar_inset, it) }
+            val want = maxOf(orig, borderPx)
+            if (view.paddingRight != want) view.setPadding(view.paddingLeft, view.paddingTop, want, view.paddingBottom)
+            if (view is android.view.ViewGroup && view.scrollBarStyle == android.view.View.SCROLLBARS_OUTSIDE_OVERLAY)
+                view.scrollBarStyle = android.view.View.SCROLLBARS_INSIDE_OVERLAY
+        }
+        if (recurse && view is android.view.ViewGroup) for (i in 0 until view.childCount) keepScrollbarsInsideFrame(view.getChildAt(i), borderPx, true)
+    }
+
+    /**
+     * v1.3.1: opt [view] (and everything inside it) out of the sharpened one-font-pixel shadow, so [crispShadows] /
+     * [applyScreenFrame] leave its own shadow alone. Same as `<tag android:id="@id/os_no_sharp_shadow"
+     * android:value="true" />` in XML. Returns [view].
+     */
+    @JvmStatic fun <T : android.view.View> noSharpShadow(view: T, off: Boolean = true): T {
+        view.setTag(R.id.os_no_sharp_shadow, if (off) true else null); return view
+    }
+
+    private fun optedOut(v: android.view.View) = v.getTag(R.id.os_no_sharp_shadow).let { it == true || it == "true" }
+
     /** v1.3: give [tv] the classic hard shadow: black, no blur, offset by exactly one font pixel. */
     @JvmStatic fun crispShadow(tv: android.widget.TextView) {
         val d = fontPixel(tv.textSize)
@@ -65,6 +110,7 @@ object Os {
      */
     @JvmStatic @JvmOverloads fun crispShadows(root: android.view.View, keep: Boolean = false) {
         fun walk(v: android.view.View) {
+            if (optedOut(v)) return
             if (v is android.widget.TextView && v.shadowColor == 0xFF000000.toInt() && v.shadowDx > 0f) crispShadow(v)
             if (v is android.view.ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i))
         }
