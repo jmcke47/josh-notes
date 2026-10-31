@@ -20,6 +20,21 @@ import androidx.core.content.ContextCompat
  * If exact alarms aren't allowed, falls back to an inexact allow-while-idle alarm (may be a few minutes late).
  */
 object Reminders {
+    /**
+     * Josh Notes only posts note-reminder notifications. On upgrade, delete every other channel (and cancel any
+     * non-reminder notification an older version left behind). Runs once per app version; returns deleted ids.
+     */
+    fun removeNonReminderNotifications(ctx: Context, force: Boolean = false): List<String> {
+        val prefs = ctx.getSharedPreferences("notifications", 0)
+        if (!force && prefs.getLong("notif_cleanup_version", 0L) == BuildConfig.VERSION_CODE.toLong()) return emptyList()
+        val nm = ctx.getSystemService(NotificationManager::class.java) ?: return emptyList()
+        val gone = nm.notificationChannels.map { it.id }.filter { it != CHANNEL && it != NotificationChannel.DEFAULT_CHANNEL_ID }
+        gone.forEach { runCatching { nm.deleteNotificationChannel(it) } }
+        runCatching { nm.activeNotifications.filter { it.notification.channelId != CHANNEL }.forEach { nm.cancel(it.tag, it.id) } }
+        prefs.edit().putLong("notif_cleanup_version", BuildConfig.VERSION_CODE.toLong()).apply()
+        return gone
+    }
+
     const val CHANNEL = "reminders"
     const val ACTION_FIRE = "com.josh.notes.REMINDER_FIRE"
     const val ACTION_DONE = "com.josh.notes.REMINDER_DONE"

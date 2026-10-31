@@ -80,6 +80,8 @@ class NotesApp : Application() {
             override fun onActivityDestroyed(a: android.app.Activity) {}
         })
         // Re-arm reminders (covers app updates and force-stops); cheap, runs off the main thread.
+        // Only note reminders notify: drop any other channel left by an older version (cheap, once per version).
+        runCatching { Reminders.removeNonReminderNotifications(this) }
         Thread { runCatching { Reminders.rescheduleAll(this) }; runCatching { Attachments.cleanupOrphans(this, NoteStore.all(this)) } }.start()
         runCatching { Backup.schedule(this) }
         // After an app update or a theme change made elsewhere, make sure widgets match the current theme.
